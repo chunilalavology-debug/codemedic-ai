@@ -27,7 +27,7 @@ export function SignupForm() {
         password,
         options: {
           data: { full_name: name },
-          emailRedirectTo: `${location.origin}/analyze`,
+          emailRedirectTo: `${location.origin}/auth/callback`,
         },
       });
       if (error) {

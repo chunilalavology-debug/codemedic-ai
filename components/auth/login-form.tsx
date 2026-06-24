@@ -21,14 +21,24 @@ export function LoginForm() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        toast.error(error.message);
-        return;
+      try {
+        const supabase = createClient();
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          if (error.message.toLowerCase().includes("email not confirmed")) {
+            toast.error("Please check your email and click the confirmation link first.");
+          } else if (error.message.toLowerCase().includes("invalid login credentials")) {
+            toast.error("Incorrect email or password.");
+          } else {
+            toast.error(error.message);
+          }
+          return;
+        }
+        router.push("/analyze");
+        router.refresh();
+      } catch {
+        toast.error("Something went wrong. Please try again.");
       }
-      router.push("/analyze");
-      router.refresh();
     });
   }
 
