@@ -20,7 +20,10 @@
     ],
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "exactOptionalPropertyTypes": false
   },
   "include": [
     "next-env.d.ts",
