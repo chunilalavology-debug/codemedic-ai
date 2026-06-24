@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -17,24 +18,36 @@ export function SignupForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [done, setDone] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     startTransition(async () => {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: { full_name: name },
-          emailRedirectTo: `${location.origin}/auth/callback`,
-        },
-      });
-      if (error) {
-        toast.error(error.message);
-        return;
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: { full_name: name },
+            emailRedirectTo: `${location.origin}/auth/callback`,
+          },
+        });
+        if (error) {
+          toast.error(error.message);
+          return;
+        }
+        // autoconfirm is on — session is returned immediately, redirect to dashboard
+        if (data.session) {
+          router.push("/analyze");
+          router.refresh();
+          return;
+        }
+        // autoconfirm is off — user must confirm email
+        setDone(true);
+      } catch {
+        toast.error("Something went wrong. Please try again.");
       }
-      setDone(true);
     });
   }
 
