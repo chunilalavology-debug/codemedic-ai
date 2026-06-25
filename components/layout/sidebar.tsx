@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   Bug,
@@ -13,12 +13,16 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
+  LogOut,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
+import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
+import { createClient } from "@/lib/supabase/client";
 
 const navGroups = [
   {
@@ -46,9 +50,31 @@ const navGroups = [
   },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  user: SupabaseUser | null;
+}
+
+export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+
+  async function handleSignOut() {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    toast.success("Signed out");
+    router.push("/login");
+    router.refresh();
+  }
+
+  const initials = user?.user_metadata?.full_name
+    ? (user.user_metadata.full_name as string)
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2)
+    : user?.email?.[0]?.toUpperCase() ?? "U";
 
   return (
     <aside
@@ -107,21 +133,65 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Collapse toggle */}
-      <div className="p-2 border-t border-border shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setCollapsed((v) => !v)}
-          className="w-full h-8 text-muted-foreground"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
+      {/* Bottom: user + sign out */}
+      <div className="border-t border-border shrink-0">
+        {/* User row */}
+        {!collapsed && (
+          <div className="flex items-center gap-2.5 px-3 py-3">
+            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-medium text-foreground truncate">
+                {user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "Account"}
+              </p>
+              <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Sign out button */}
+        <div className="px-2 pb-2">
           {collapsed ? (
-            <ChevronRight className="size-4" />
+            <Tooltip>
+              <TooltipTrigger render={<span />}>
+                <button
+                  onClick={handleSignOut}
+                  className="flex w-full items-center justify-center rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
+                  aria-label="Sign out"
+                >
+                  <LogOut className="size-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Sign out</TooltipContent>
+            </Tooltip>
           ) : (
-            <ChevronLeft className="size-4" />
+            <button
+              onClick={handleSignOut}
+              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
+            >
+              <LogOut className="size-4 shrink-0" />
+              Sign out
+            </button>
           )}
-        </Button>
+        </div>
+
+        {/* Collapse toggle */}
+        <div className="px-2 pb-2 border-t border-border pt-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setCollapsed((v) => !v)}
+            className="w-full h-7 text-muted-foreground"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {collapsed ? (
+              <ChevronRight className="size-4" />
+            ) : (
+              <ChevronLeft className="size-4" />
+            )}
+          </Button>
+        </div>
       </div>
     </aside>
   );
