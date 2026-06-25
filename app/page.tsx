@@ -192,6 +192,15 @@ export default function LandingPage() {
           <source src="/hero.mp4" type="video/mp4" />
         </video>
 
+        {/* Subtle overlay for text legibility */}
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(to right, rgba(6,2,2,0.38) 0%, rgba(6,2,2,0.25) 55%, rgba(6,2,2,0.08) 100%)",
+          }}
+        />
         <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
           <Badge
             variant="outline"
