@@ -1,5 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
+import { ensureAvatarsBucket } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+
+const AVATAR_SETUP_HINT =
+  "Avatar storage is not configured. In Supabase Dashboard → SQL Editor, run the file supabase/avatars-bucket.sql (or run npm run setup:avatars locally).";
+
+function avatarStorageError(message: string) {
+  const lower = message.toLowerCase();
+
+  if (lower.includes("bucket not found")) {
+    return AVATAR_SETUP_HINT;
+  }
+
+  if (
+    lower.includes("row-level security") ||
+    lower.includes("policy") ||
+    lower.includes("permission denied")
+  ) {
+    return `Avatar upload is blocked by storage policies. ${AVATAR_SETUP_HINT}`;
+  }
+
+  return message;
+}
 
 const MAX_SIZE = 2 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
@@ -50,6 +72,8 @@ export async function POST(request: NextRequest) {
     const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") ?? "jpg";
     const path = `${user.id}/avatar.${ext}`;
 
+    await ensureAvatarsBucket();
+
     const { error: uploadError } = await supabase.storage
       .from("avatars")
       .upload(path, file, { upsert: true, contentType: file.type });
@@ -58,10 +82,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            uploadError.message.includes("Bucket not found")
-              ? "Avatar storage is not set up yet. Run the avatars bucket SQL in Supabase."
-              : uploadError.message,
+          error: avatarStorageError(uploadError.message),
         },
         { status: 500 }
       );
