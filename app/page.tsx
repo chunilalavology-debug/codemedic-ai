@@ -201,13 +201,6 @@ export default function LandingPage() {
               "linear-gradient(to right, rgba(6,2,2,0.72) 0%, rgba(6,2,2,0.55) 55%, rgba(6,2,2,0.28) 100%)",
           }}
         />
-        {/* Bottom fade to background */}
-        <div
-          aria-hidden
-          className="absolute bottom-0 inset-x-0 h-28"
-          style={{ background: "linear-gradient(to bottom, transparent, var(--background))" }}
-        />
-
         <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
           <Badge
             variant="outline"
