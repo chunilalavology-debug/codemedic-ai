@@ -23,7 +23,10 @@ export function LoginForm() {
     startTransition(async () => {
       try {
         const supabase = createClient();
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim(),
+          password,
+        });
         if (error) {
           if (error.message.toLowerCase().includes("email not confirmed")) {
             toast.error("Please check your email and click the confirmation link first.");

@@ -3,6 +3,12 @@ import { getHistory, deleteAnalysis } from "@/lib/history";
 import { createClient } from "@/lib/supabase/server";
 import type { HistoryResponse } from "@/types";
 
+function parsePositiveInt(value: string | null, fallback: number, max: number): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.min(max, Math.max(1, parsed));
+}
+
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -18,8 +24,8 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-    const pageSize = Math.min(50, Math.max(1, parseInt(searchParams.get("pageSize") ?? "20")));
+    const page = parsePositiveInt(searchParams.get("page"), 1, Number.MAX_SAFE_INTEGER);
+    const pageSize = parsePositiveInt(searchParams.get("pageSize"), 20, 50);
 
     const { records, total } = await getHistory(user.id, page, pageSize);
 

@@ -2,12 +2,14 @@
 
 import { useState } from "react";
 import { useTheme } from "next-themes";
-import { Sun, Moon, Monitor, LogOut, User, Palette, Info, Shield } from "lucide-react";
+import { Sun, Moon, Monitor, LogOut, User, Palette, Info, Shield, KeyRound } from "lucide-react";
 import { toast } from "sonner";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { ProfileForm } from "@/components/settings/profile-form";
+import { PasswordForm } from "@/components/settings/password-form";
 import { signOut } from "@/lib/auth/sign-out";
 import { cn } from "@/lib/utils";
 
@@ -55,13 +57,15 @@ export function SettingsShell({ user }: SettingsShellProps) {
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
+    if (signingOut) return;
     setSigningOut(true);
-    toast.success("Signed out successfully");
     const result = await signOut();
     if (result?.ok === false) {
       toast.error(result.message);
       setSigningOut(false);
+      return;
     }
+    toast.success("Signed out successfully");
   };
 
   return (
@@ -69,42 +73,18 @@ export function SettingsShell({ user }: SettingsShellProps) {
       {/* Account */}
       <Section
         icon={User}
-        title="Account"
-        description="Your profile and account details"
+        title="Profile Settings"
+        description="Update your photo, nickname, and personal details"
       >
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Email address</p>
-              <p className="text-sm font-medium text-foreground">
-                {user?.email ?? "—"}
-              </p>
-            </div>
-            <Badge variant="secondary" className="text-xs">Verified</Badge>
-          </div>
+        <ProfileForm user={user} />
+      </Section>
 
-          <Separator />
-
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">Account created</p>
-              <p className="text-sm font-medium text-foreground">
-                {user?.created_at
-                  ? new Date(user.created_at).toLocaleDateString("en-US", {
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  : "—"}
-              </p>
-            </div>
-            <Badge
-              className="text-xs bg-green-500/10 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800/40"
-            >
-              Active
-            </Badge>
-          </div>
-        </div>
+      <Section
+        icon={KeyRound}
+        title="Password"
+        description="Change your account password"
+      >
+        <PasswordForm user={user} />
       </Section>
 
       {/* Appearance */}
@@ -121,7 +101,7 @@ export function SettingsShell({ user }: SettingsShellProps) {
                 key={value}
                 onClick={() => setTheme(value)}
                 className={cn(
-                  "flex flex-col items-center gap-2 rounded-xl border p-4 text-sm font-medium transition-all",
+                  "flex cursor-pointer flex-col items-center gap-2 rounded-xl border p-4 text-sm font-medium transition-all",
                   theme === value
                     ? "border-primary bg-primary/5 text-primary shadow-sm"
                     : "border-border bg-muted/20 text-muted-foreground hover:text-foreground hover:bg-muted/50"

@@ -20,9 +20,11 @@ import { toast } from "sonner";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
+import { UserAvatar } from "@/components/shared/user-avatar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
 import { signOut } from "@/lib/auth/sign-out";
+import { getUserProfile } from "@/lib/profile";
 
 const navGroups = [
   {
@@ -57,23 +59,21 @@ interface SidebarProps {
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   async function handleSignOut() {
-    toast.success("Signed out");
+    if (signingOut) return;
+    setSigningOut(true);
     const result = await signOut();
     if (result?.ok === false) {
       toast.error(result.message);
+      setSigningOut(false);
+      return;
     }
+    toast.success("Signed out");
   }
 
-  const initials = user?.user_metadata?.full_name
-    ? (user.user_metadata.full_name as string)
-        .split(" ")
-        .map((n: string) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
-    : user?.email?.[0]?.toUpperCase() ?? "U";
+  const profile = getUserProfile(user);
 
   return (
     <aside
@@ -100,32 +100,44 @@ export function Sidebar({ user }: SidebarProps) {
               {group.items.map(({ href, label, icon: Icon }) => {
                 const active =
                   pathname === href || pathname.startsWith(href + "/");
-                const link = (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      active
-                        ? "bg-primary/10 text-primary"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                      collapsed && "justify-center px-2"
-                    )}
-                  >
+                const linkClassName = cn(
+                  "flex cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  active
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                  collapsed && "justify-center px-2"
+                );
+                const content = (
+                  <>
                     <Icon className="size-4 shrink-0" />
                     {!collapsed && <span>{label}</span>}
-                  </Link>
+                  </>
                 );
 
                 if (collapsed) {
                   return (
                     <Tooltip key={href}>
-                      <TooltipTrigger render={<span />}>{link}</TooltipTrigger>
+                      <TooltipTrigger
+                        render={
+                          <Link
+                            href={href}
+                            className={linkClassName}
+                            aria-label={label}
+                          />
+                        }
+                      >
+                        {content}
+                      </TooltipTrigger>
                       <TooltipContent side="right">{label}</TooltipContent>
                     </Tooltip>
                   );
                 }
-                return link;
+
+                return (
+                  <Link key={href} href={href} className={linkClassName}>
+                    {content}
+                  </Link>
+                );
               })}
             </div>
           </div>
@@ -137,12 +149,10 @@ export function Sidebar({ user }: SidebarProps) {
         {/* User row */}
         {!collapsed && (
           <div className="flex items-center gap-2.5 px-3 py-3">
-            <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary">
-              {initials}
-            </div>
+            <UserAvatar user={user} size="sm" className="size-7" />
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-foreground truncate">
-                {user?.user_metadata?.full_name ?? user?.email?.split("@")[0] ?? "Account"}
+                {profile.displayName}
               </p>
               <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
             </div>
@@ -153,21 +163,27 @@ export function Sidebar({ user }: SidebarProps) {
         <div className="px-2 pb-2">
           {collapsed ? (
             <Tooltip>
-              <TooltipTrigger render={<span />}>
-                <button
-                  onClick={handleSignOut}
-                  className="flex w-full items-center justify-center rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
-                  aria-label="Sign out"
-                >
-                  <LogOut className="size-4" />
-                </button>
+              <TooltipTrigger
+                render={
+                  <button
+                    type="button"
+                    onClick={handleSignOut}
+                    disabled={signingOut}
+                    className="flex w-full cursor-pointer items-center justify-center rounded-lg px-2 py-2 text-sm text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+                    aria-label="Sign out"
+                  />
+                }
+              >
+                <LogOut className="size-4" />
               </TooltipTrigger>
               <TooltipContent side="right">Sign out</TooltipContent>
             </Tooltip>
           ) : (
             <button
+              type="button"
               onClick={handleSignOut}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500"
+              disabled={signingOut}
+              className="flex w-full cursor-pointer items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-red-500/10 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <LogOut className="size-4 shrink-0" />
               Sign out

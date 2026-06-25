@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from "next/server";
 import * as cheerio from "cheerio";
 import Groq from "groq-sdk";
 import { v4 as uuidv4 } from "uuid";
+import { requireApiUser } from "@/lib/auth/api-auth";
+import { isBlockedUrl, normalizeHttpUrl } from "@/lib/url-security";
 import type { ScanResult, ScanIssue, SeoMetrics, ScanScores } from "@/types";
 
 const MODEL = "llama-3.3-70b-versatile";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApiUser();
+    if (!auth.ok) return auth.response;
+
     const body = await request.json();
     const { url, type = "website" } = body as { url: string; type?: string };
 
@@ -15,9 +20,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "URL is required" }, { status: 400 });
     }
 
-    let normalizedUrl = url.trim();
-    if (!/^https?:\/\//i.test(normalizedUrl)) {
-      normalizedUrl = "https://" + normalizedUrl;
+    const normalizedUrl = normalizeHttpUrl(url);
+    if (!normalizedUrl) {
+      return NextResponse.json({ success: false, error: "Invalid URL format" }, { status: 400 });
+    }
+
+    if (type !== "github" && isBlockedUrl(normalizedUrl)) {
+      return NextResponse.json(
+        { success: false, error: "Cannot scan internal or private addresses" },
+        { status: 400 }
+      );
     }
 
     if (type === "github") {

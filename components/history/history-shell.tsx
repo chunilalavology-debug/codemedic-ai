@@ -275,22 +275,38 @@ export function HistoryShell({ userId }: HistoryShellProps) {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const pageSize = 20;
 
   const fetchHistory = useCallback(
     async (p: number, append = false) => {
-      if (!userId) return;
-      append ? setLoadingMore(true) : setLoading(true);
+      if (!userId) {
+        setLoading(false);
+        setFetchError("Unable to load history for this account.");
+        return;
+      }
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setFetchError(null);
       try {
         const res = await fetch(`/api/history?page=${p}&pageSize=${pageSize}`);
         const json = await res.json();
-        if (!json.success) throw new Error(json.error);
+        if (!res.ok || !json.success) throw new Error(json.error ?? "Failed to load history");
         setRecords((prev) => (append ? [...prev, ...(json.data ?? [])] : (json.data ?? [])));
         setTotal(json.total ?? 0);
-      } catch {
-        toast.error("Failed to load history");
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to load history";
+        setFetchError(message);
+        toast.error(message);
       } finally {
-        append ? setLoadingMore(false) : setLoading(false);
+        if (append) {
+          setLoadingMore(false);
+        } else {
+          setLoading(false);
+        }
       }
     },
     [userId]
@@ -312,6 +328,18 @@ export function HistoryShell({ userId }: HistoryShellProps) {
   };
 
   if (loading) return <HistorySkeleton />;
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 gap-4 text-center rounded-2xl border border-dashed border-border">
+        <p className="font-medium text-foreground">Could not load history</p>
+        <p className="text-sm text-muted-foreground max-w-sm">{fetchError}</p>
+        <Button variant="outline" onClick={() => fetchHistory(1)}>
+          Try again
+        </Button>
+      </div>
+    );
+  }
 
   if (records.length === 0) {
     return (

@@ -184,7 +184,7 @@ export function ImageShell() {
                 {frameworks.map((f) => (
                   <button
                     key={f.id}
-                    onClick={() => setFramework(f.id)}
+                    onClick={() => { setFramework(f.id); setResult(null); }}
                     className={cn(
                       "rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                       framework === f.id
@@ -202,7 +202,7 @@ export function ImageShell() {
                 {(["component", "page"] as const).map((m) => (
                   <button
                     key={m}
-                    onClick={() => setMode(m)}
+                    onClick={() => { setMode(m); setResult(null); }}
                     className={cn(
                       "rounded-lg px-3 py-1.5 text-sm font-medium capitalize transition-colors",
                       mode === m

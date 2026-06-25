@@ -7,6 +7,7 @@ import { Card, CardContent, CardTitle, CardDescription } from "@/components/ui/c
 
 import { Badge } from "@/components/ui/badge";
 import { formatRelativeTime } from "@/lib/utils";
+import { getUserProfile } from "@/lib/profile";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface RecentRow {
@@ -67,7 +68,8 @@ const analysisTypeBadge: Record<string, string> = {
 };
 
 export function OverviewShell({ user, totalAnalyses, recentAnalyses }: OverviewShellProps) {
-  const name = user?.user_metadata?.full_name?.split(" ")[0] ?? "there";
+  const { displayName } = getUserProfile(user);
+  const name = displayName.split(" ")[0] ?? "there";
 
   const totalIssues = recentAnalyses.reduce((sum, r) => {
     const s = r.result?.securityIssues?.length ?? 0;

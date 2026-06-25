@@ -71,6 +71,7 @@ export function InspectorShell() {
   const handleSend = useCallback(async () => {
     if (!url.trim()) { toast.error("Please enter a URL"); return; }
     setIsLoading(true);
+    setResult(null);
     try {
       const headerMap: Record<string, string> = {};
       for (const { key, value } of headers) {

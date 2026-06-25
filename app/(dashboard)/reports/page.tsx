@@ -9,12 +9,16 @@ export default async function ReportsPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: rows } = await supabase
+  const { data: rows, error } = await supabase
     .from("analyses")
     .select("id, language, analysis_type, created_at, result")
     .eq("user_id", user?.id ?? "")
     .order("created_at", { ascending: false })
     .limit(100);
+
+  if (error) {
+    throw new Error(error.message);
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

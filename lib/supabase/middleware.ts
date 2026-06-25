@@ -2,11 +2,27 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
-  // Skip auth checks when Supabase env vars are not configured
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   ) {
+    const isProtectedRoute =
+      request.nextUrl.pathname.startsWith("/overview") ||
+      request.nextUrl.pathname.startsWith("/analyze") ||
+      request.nextUrl.pathname.startsWith("/scan") ||
+      request.nextUrl.pathname.startsWith("/image-to-code") ||
+      request.nextUrl.pathname.startsWith("/api-inspector") ||
+      request.nextUrl.pathname.startsWith("/history") ||
+      request.nextUrl.pathname.startsWith("/reports") ||
+      request.nextUrl.pathname.startsWith("/settings");
+
+    if (isProtectedRoute || request.nextUrl.pathname.startsWith("/api/")) {
+      return NextResponse.json(
+        { success: false, error: "Authentication service unavailable" },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.next({ request });
   }
 

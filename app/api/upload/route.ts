@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { detectLanguage } from "@/lib/utils";
+import { requireApiUser } from "@/lib/auth/api-auth";
 import type { UploadedFile } from "@/types";
 
 const MAX_FILE_SIZE = 100 * 1024; // 100 KB
@@ -7,6 +8,9 @@ const MAX_FILES = 10;
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApiUser();
+    if (!auth.ok) return auth.response;
+
     const formData = await request.formData();
     const files = formData.getAll("files") as File[];
 

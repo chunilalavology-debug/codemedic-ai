@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { analyzeCode } from "@/lib/claude";
 import { saveAnalysis } from "@/lib/history";
-import { createClient } from "@/lib/supabase/server";
+import { requireApiUser } from "@/lib/auth/api-auth";
 import type { AnalyzeRequest, AnalyzeResponse } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApiUser();
+    if (!auth.ok) return auth.response;
+
     const body = (await request.json()) as AnalyzeRequest;
 
     if (!body.code?.trim()) {
@@ -15,15 +18,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (body.code.length > 100_000) {
+      return NextResponse.json<AnalyzeResponse>(
+        { success: false, error: "Code must be under 100,000 characters" },
+        { status: 400 }
+      );
+    }
+
     const result = await analyzeCode(body);
 
-    // Save to history — best-effort, never fails the response
     try {
-      const supabase = await createClient();
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) await saveAnalysis(body, result, user.id);
+      await saveAnalysis(body, result, auth.user.id);
     } catch {
       // non-fatal
     }

@@ -1,16 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { v4 as uuidv4 } from "uuid";
+import { requireApiUser } from "@/lib/auth/api-auth";
+import { isBlockedUrl } from "@/lib/url-security";
 import type { ApiTestResult } from "@/types";
 
-const BLOCKED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0", "::1", "169.254.", "10.", "192.168.", "172.16."];
+const ALLOWED_METHODS = new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApiUser();
+    if (!auth.ok) return auth.response;
+
     const body = await request.json();
-    const { url, method = "GET", headers: reqHeaders = {}, body: reqBody, auth } = body;
+    const { url, method = "GET", headers: reqHeaders = {}, body: reqBody, auth: authConfig } = body;
 
     if (!url || typeof url !== "string") {
       return NextResponse.json({ success: false, error: "URL is required" }, { status: 400 });
+    }
+
+    const normalizedMethod = String(method).toUpperCase();
+    if (!ALLOWED_METHODS.has(normalizedMethod)) {
+      return NextResponse.json({ success: false, error: "Unsupported HTTP method" }, { status: 400 });
     }
 
     let parsedUrl: URL;
@@ -20,25 +30,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Invalid URL format" }, { status: 400 });
     }
 
-    // Block SSRF attempts to internal hosts
-    if (BLOCKED_HOSTS.some((h) => parsedUrl.hostname.includes(h))) {
+    if (isBlockedUrl(parsedUrl.toString())) {
       return NextResponse.json({ success: false, error: "Cannot send requests to internal addresses" }, { status: 400 });
     }
 
     const fetchHeaders: Record<string, string> = { ...reqHeaders };
-    if (auth?.type === "bearer" && auth.value) {
-      fetchHeaders["Authorization"] = `Bearer ${auth.value}`;
-    } else if (auth?.type === "basic" && auth.value) {
-      fetchHeaders["Authorization"] = `Basic ${Buffer.from(auth.value).toString("base64")}`;
+    if (authConfig?.type === "bearer" && authConfig.value) {
+      fetchHeaders["Authorization"] = `Bearer ${authConfig.value}`;
+    } else if (authConfig?.type === "basic" && authConfig.value) {
+      fetchHeaders["Authorization"] = `Basic ${Buffer.from(authConfig.value).toString("base64")}`;
     }
 
     const fetchOptions: RequestInit = {
-      method,
+      method: normalizedMethod,
       headers: fetchHeaders,
       signal: AbortSignal.timeout(15000),
+      redirect: "manual",
     };
 
-    if (reqBody && !["GET", "HEAD"].includes(method)) {
+    if (reqBody && !["GET", "HEAD"].includes(normalizedMethod)) {
       fetchOptions.body = reqBody;
       if (!fetchHeaders["Content-Type"]) {
         try { JSON.parse(reqBody); fetchHeaders["Content-Type"] = "application/json"; } catch { fetchHeaders["Content-Type"] = "text/plain"; }

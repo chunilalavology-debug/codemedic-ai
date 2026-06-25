@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { v4 as uuidv4 } from "uuid";
+import { requireApiUser } from "@/lib/auth/api-auth";
 
 const VISION_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct";
 
@@ -14,6 +15,9 @@ const frameworkPrompts: Record<string, string> = {
 
 export async function POST(request: NextRequest) {
   try {
+    const auth = await requireApiUser();
+    if (!auth.ok) return auth.response;
+
     const formData = await request.formData();
     const file = formData.get("image") as File | null;
     const framework = (formData.get("framework") as string) ?? "react";
