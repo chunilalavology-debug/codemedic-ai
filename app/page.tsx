@@ -179,59 +179,67 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center justify-center px-4 pt-24 pb-20 text-center overflow-hidden">
-        {/* Ambient gradient */}
+      <section className="relative flex flex-col items-center justify-center px-4 pt-24 pb-16 text-center overflow-hidden min-h-[82vh]">
+        {/* Video background */}
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+          aria-hidden
+        >
+          <source src="/hero.mp4" type="video/mp4" />
+        </video>
+
+        {/* Dark overlay so text stays legible */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 h-[600px] opacity-30 dark:opacity-20"
+          className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% -10%, oklch(0.55 0.24 264 / 0.6), transparent)",
+              "linear-gradient(to right, rgba(6,2,2,0.72) 0%, rgba(6,2,2,0.55) 55%, rgba(6,2,2,0.28) 100%)",
           }}
         />
-        {/* Subtle grid */}
+        {/* Bottom fade to background */}
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.025] dark:opacity-[0.04]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(120,120,200,0.8) 1px, transparent 1px), linear-gradient(90deg, rgba(120,120,200,0.8) 1px, transparent 1px)",
-            backgroundSize: "64px 64px",
-          }}
+          className="absolute bottom-0 inset-x-0 h-28"
+          style={{ background: "linear-gradient(to bottom, transparent, var(--background))" }}
         />
 
         <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
           <Badge
             variant="outline"
-            className="mb-6 border-primary/30 bg-primary/5 text-primary px-4 py-1.5 text-xs font-medium"
+            className="mb-6 border-white/25 bg-white/10 text-white px-4 py-1.5 text-xs font-medium backdrop-blur-sm"
           >
             <Star className="size-3 mr-1.5 fill-current" />
             Powered by Groq — ultra-fast AI inference
           </Badge>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-foreground leading-[1.1]">
+          <h1 className="text-4xl sm:text-5xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1] drop-shadow-lg">
             Your AI-Powered{" "}
             <span
               className="bg-clip-text text-transparent"
               style={{
-                backgroundImage: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%)",
+                backgroundImage: "linear-gradient(135deg, #f87171 0%, #fb923c 60%, #fbbf24 100%)",
               }}
             >
               Dev Platform
             </span>
           </h1>
 
-          <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-2xl leading-relaxed">
+          <p className="mt-5 text-base sm:text-lg text-white/70 max-w-2xl leading-relaxed drop-shadow">
             Fix bugs, scan websites, convert designs to code, and test APIs —
-            all in one place, all powered by state-of-the-art AI.
+            all in one place, powered by state-of-the-art AI.
           </p>
 
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
             <Link
               href="/signup"
               className={cn(
                 buttonVariants({ size: "lg" }),
-                "gradient-primary text-white border-0 h-12 px-8 shadow-lg shadow-primary/25"
+                "gradient-primary text-white border-0 h-12 px-8 shadow-lg"
               )}
             >
               Start for free — no card needed
@@ -239,18 +247,18 @@ export default function LandingPage() {
             </Link>
             <Link
               href="/login"
-              className={cn(buttonVariants({ variant: "outline", size: "lg" }), "h-12 px-8")}
+              className="inline-flex items-center justify-center h-12 px-8 rounded-lg text-sm font-medium border border-white/35 bg-white/10 text-white backdrop-blur-sm transition-colors hover:bg-white/20"
             >
               Sign in
             </Link>
           </div>
 
           {/* Language pills */}
-          <div className="mt-14 flex flex-wrap justify-center gap-2 max-w-2xl">
+          <div className="mt-10 flex flex-wrap justify-center gap-2 max-w-2xl">
             {languages.map((lang) => (
               <span
                 key={lang}
-                className="rounded-full border border-border bg-muted/50 px-3 py-1 text-xs text-muted-foreground"
+                className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs text-white/65 backdrop-blur-sm"
               >
                 {lang}
               </span>
@@ -259,8 +267,8 @@ export default function LandingPage() {
         </div>
 
         {/* Scroll cue */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce opacity-40">
-          <ChevronDown className="size-5 text-muted-foreground" />
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 animate-bounce opacity-40">
+          <ChevronDown className="size-5 text-white" />
         </div>
       </section>
 
@@ -269,7 +277,7 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-border/50">
             {stats.map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center py-8 px-4 text-center">
+              <div key={stat.label} className="flex flex-col items-center py-6 px-4 text-center">
                 <span className="text-3xl font-extrabold text-foreground">{stat.value}</span>
                 <span className="mt-1 text-xs text-muted-foreground">{stat.label}</span>
               </div>
@@ -279,9 +287,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── Features ─────────────────────────────────────────────────────── */}
-      <section id="features" className="px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16">
+      <section id="features" className="px-4 py-14 sm:px-6 lg:px-8 scroll-mt-16">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/5 text-primary text-xs">
               Everything you need
             </Badge>
@@ -326,9 +334,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── How it works ─────────────────────────────────────────────────── */}
-      <section id="how-it-works" className="px-4 py-24 sm:px-6 lg:px-8 bg-muted/20 scroll-mt-16">
+      <section id="how-it-works" className="px-4 py-14 sm:px-6 lg:px-8 bg-muted/20 scroll-mt-16">
         <div className="mx-auto max-w-7xl">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/5 text-primary text-xs">
               Simple by design
             </Badge>
@@ -361,9 +369,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── Demo / Code Preview ──────────────────────────────────────────── */}
-      <section className="px-4 py-24 sm:px-6 lg:px-8">
+      <section className="px-4 py-14 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-5xl">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/5 text-primary text-xs">
               Live preview
             </Badge>
@@ -426,9 +434,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── Benefits ─────────────────────────────────────────────────────── */}
-      <section className="px-4 py-24 sm:px-6 lg:px-8 bg-muted/20">
+      <section className="px-4 py-14 sm:px-6 lg:px-8 bg-muted/20">
         <div className="mx-auto max-w-7xl">
-          <div className="grid grid-cols-1 gap-12 lg:grid-cols-2 items-center">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-2 items-center">
             <div>
               <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/5 text-primary text-xs">
                 Why CodeMedic AI
@@ -473,9 +481,9 @@ export default function LandingPage() {
       </section>
 
       {/* ── FAQ ──────────────────────────────────────────────────────────── */}
-      <section id="faq" className="px-4 py-24 sm:px-6 lg:px-8 scroll-mt-16">
+      <section id="faq" className="px-4 py-14 sm:px-6 lg:px-8 scroll-mt-16">
         <div className="mx-auto max-w-3xl">
-          <div className="text-center mb-14">
+          <div className="text-center mb-8">
             <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/5 text-primary text-xs">
               FAQ
             </Badge>
@@ -504,8 +512,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── Final CTA ────────────────────────────────────────────────────── */}
-      <section className="px-4 py-24 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-3xl rounded-3xl border border-primary/20 bg-primary/5 p-12 text-center relative overflow-hidden">
+      <section className="px-4 py-14 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-3xl rounded-3xl border border-primary/20 bg-primary/5 p-10 text-center relative overflow-hidden">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 opacity-40"
