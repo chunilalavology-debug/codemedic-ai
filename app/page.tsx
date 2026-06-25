@@ -179,7 +179,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <section className="relative flex flex-col items-center justify-center px-4 pt-24 pb-16 text-center overflow-hidden min-h-[82vh]">
+      <section className="relative flex flex-col items-center justify-center px-4 pt-24 pb-16 text-center overflow-hidden min-h-[82vh] lg:min-h-screen">
         {/* Video background */}
         <video
           autoPlay
