@@ -42,8 +42,13 @@ export async function updateSession(request: NextRequest) {
     request.nextUrl.pathname.startsWith("/signup");
 
   const isProtectedRoute =
+    request.nextUrl.pathname.startsWith("/overview") ||
     request.nextUrl.pathname.startsWith("/analyze") ||
+    request.nextUrl.pathname.startsWith("/scan") ||
+    request.nextUrl.pathname.startsWith("/image-to-code") ||
+    request.nextUrl.pathname.startsWith("/api-inspector") ||
     request.nextUrl.pathname.startsWith("/history") ||
+    request.nextUrl.pathname.startsWith("/reports") ||
     request.nextUrl.pathname.startsWith("/settings");
 
   if (!user && isProtectedRoute) {
@@ -54,7 +59,7 @@ export async function updateSession(request: NextRequest) {
 
   if (user && isAuthRoute) {
     const url = request.nextUrl.clone();
-    url.pathname = "/analyze";
+    url.pathname = "/overview";
     return NextResponse.redirect(url);
   }
 
