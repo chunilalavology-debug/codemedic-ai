@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Bug,
@@ -22,7 +22,7 @@ import { cn } from "@/lib/utils";
 import { Logo } from "@/components/shared/logo";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Button } from "@/components/ui/button";
-import { createClient } from "@/lib/supabase/client";
+import { signOut } from "@/lib/auth/sign-out";
 
 const navGroups = [
   {
@@ -56,15 +56,14 @@ interface SidebarProps {
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
     toast.success("Signed out");
-    router.push("/login");
-    router.refresh();
+    const result = await signOut();
+    if (result?.ok === false) {
+      toast.error(result.message);
+    }
   }
 
   const initials = user?.user_metadata?.full_name

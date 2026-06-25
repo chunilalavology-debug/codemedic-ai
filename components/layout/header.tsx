@@ -1,19 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { LogOut, User } from "lucide-react";
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { LogOut, Settings } from "lucide-react";
 import { toast } from "sonner";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
-import { createClient } from "@/lib/supabase/client";
+import { signOut } from "@/lib/auth/sign-out";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface HeaderProps {
@@ -22,14 +14,30 @@ interface HeaderProps {
 }
 
 export function Header({ title, user }: HeaderProps) {
-  const router = useRouter();
+  const [open, setOpen] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    if (signingOut) return;
+    setOpen(false);
+    setSigningOut(true);
     toast.success("Signed out");
-    router.push("/login");
-    router.refresh();
+    const result = await signOut();
+    if (result?.ok === false) {
+      toast.error(result.message);
+      setSigningOut(false);
+    }
   }
 
   const initials = user?.user_metadata?.full_name
@@ -48,51 +56,56 @@ export function Header({ title, user }: HeaderProps) {
       <div className="flex items-center gap-2">
         <ThemeToggle />
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            render={
-              <button
-                className="rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                aria-label="User menu"
-              />
-            }
+        <div ref={ref} className="relative">
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            className="flex size-8 items-center justify-center rounded-full bg-primary/15 text-xs font-semibold text-primary hover:bg-primary/25 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-label="User menu"
+            aria-expanded={open}
+            aria-haspopup="menu"
           >
-            <Avatar className="size-8 cursor-pointer">
-              <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52">
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-medium">
+            {initials}
+          </button>
+
+          {open && (
+            <div
+              role="menu"
+              className="absolute right-0 top-10 z-50 w-56 rounded-xl border border-border bg-popover shadow-lg overflow-hidden"
+            >
+              <div className="px-4 py-3 border-b border-border">
+                <p className="text-sm font-medium text-foreground truncate">
                   {user?.user_metadata?.full_name ?? "Account"}
-                </span>
-                <span className="text-xs text-muted-foreground truncate">
+                </p>
+                <p className="text-xs text-muted-foreground truncate mt-0.5">
                   {user?.email}
-                </span>
+                </p>
               </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="cursor-pointer"
-              onClick={() => router.push("/settings")}
-            >
-              <User className="mr-2 size-4" />
-              Settings
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleSignOut}
-              variant="destructive"
-              className="cursor-pointer"
-            >
-              <LogOut className="mr-2 size-4" />
-              Sign out
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+              <div className="p-1">
+                <Link
+                  href="/settings"
+                  role="menuitem"
+                  onClick={() => setOpen(false)}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-foreground hover:bg-accent transition-colors"
+                >
+                  <Settings className="size-4 text-muted-foreground" />
+                  Settings
+                </Link>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={handleSignOut}
+                  disabled={signingOut}
+                  className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+                >
+                  <LogOut className="size-4" />
+                  {signingOut ? "Signing out…" : "Sign out"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );

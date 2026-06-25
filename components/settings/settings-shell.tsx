@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { Sun, Moon, Monitor, LogOut, User, Palette, Info, Shield } from "lucide-react";
 import { toast } from "sonner";
@@ -9,7 +8,7 @@ import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { createClient } from "@/lib/supabase/client";
+import { signOut } from "@/lib/auth/sign-out";
 import { cn } from "@/lib/utils";
 
 interface SettingsShellProps {
@@ -52,20 +51,15 @@ function Section({
 }
 
 export function SettingsShell({ user }: SettingsShellProps) {
-  const router = useRouter();
   const { theme, setTheme } = useTheme();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
     setSigningOut(true);
-    try {
-      const supabase = createClient();
-      await supabase.auth.signOut();
-      toast.success("Signed out successfully");
-      router.push("/login");
-      router.refresh();
-    } catch {
-      toast.error("Failed to sign out");
+    toast.success("Signed out successfully");
+    const result = await signOut();
+    if (result?.ok === false) {
+      toast.error(result.message);
       setSigningOut(false);
     }
   };
