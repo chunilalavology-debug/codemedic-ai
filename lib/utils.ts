@@ -51,6 +51,7 @@ export function formatBytes(bytes: number): string {
 
 export function formatRelativeTime(dateStr: string): string {
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "Unknown";
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffSecs = Math.floor(diffMs / 1000);

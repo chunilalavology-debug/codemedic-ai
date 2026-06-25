@@ -20,7 +20,7 @@ export function SignupForm() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     startTransition(async () => {
       try {
@@ -39,7 +39,7 @@ export function SignupForm() {
         }
         // autoconfirm is on — session is returned immediately, redirect to dashboard
         if (data.session) {
-          router.push("/analyze");
+          router.push("/overview");
           router.refresh();
           return;
         }

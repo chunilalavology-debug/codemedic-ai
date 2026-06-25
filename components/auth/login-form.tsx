@@ -18,7 +18,7 @@ export function LoginForm() {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
-  function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     startTransition(async () => {
       try {
@@ -34,7 +34,7 @@ export function LoginForm() {
           }
           return;
         }
-        router.push("/analyze");
+        router.push("/overview");
         router.refresh();
       } catch {
         toast.error("Something went wrong. Please try again.");
@@ -91,6 +91,12 @@ export function LoginForm() {
                 {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary transition-colors">
+              Forgot password?
+            </Link>
           </div>
 
           <Button

@@ -177,11 +177,11 @@ export function SettingsShell({ user }: SettingsShellProps) {
         <div className="space-y-3 text-sm">
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Version</p>
-            <Badge variant="outline" className="font-mono text-xs">0.1.0</Badge>
+            <Badge variant="outline" className="font-mono text-xs">v0.2.0</Badge>
           </div>
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Framework</p>
-            <Badge variant="outline" className="font-mono text-xs">Next.js 16</Badge>
+            <Badge variant="outline" className="font-mono text-xs">Next.js 16.2.9</Badge>
           </div>
           <div className="flex items-center justify-between">
             <p className="text-muted-foreground">Built by</p>
