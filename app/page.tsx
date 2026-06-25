@@ -198,7 +198,7 @@ export default function LandingPage() {
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to right, rgba(6,2,2,0.38) 0%, rgba(6,2,2,0.25) 55%, rgba(6,2,2,0.08) 100%)",
+              "linear-gradient(to right, rgba(6,2,2,0.55) 0%, rgba(6,2,2,0.40) 55%, rgba(6,2,2,0.18) 100%)",
           }}
         />
         <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto">
