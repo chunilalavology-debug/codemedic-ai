@@ -107,7 +107,7 @@ export function OverviewShell({ user, totalAnalyses, recentAnalyses }: OverviewS
     : null;
 
   return (
-    <div className="space-y-8 lg:space-y-10 max-w-6xl mx-auto pb-4">
+    <div className="space-y-6 max-w-6xl mx-auto pb-4">
       {/* Hero welcome */}
       <motion.div
         {...fadeUp}
@@ -130,24 +130,24 @@ export function OverviewShell({ user, totalAnalyses, recentAnalyses }: OverviewS
               "linear-gradient(90deg, transparent, oklch(0.58 0.22 38 / 0.5), transparent)",
           }}
         />
-        <div className="relative flex flex-col gap-4 p-5 sm:p-6 lg:p-8 sm:flex-row sm:items-center sm:justify-between">
-          <div className="space-y-2 min-w-0">
+        <div className="relative flex flex-col gap-3 p-4 sm:p-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2">
               <Badge variant="outline" className="border-primary/25 bg-primary/5 text-primary text-[10px] uppercase tracking-wider">
                 <Sparkles className="size-3 mr-1" />
                 Dashboard
               </Badge>
             </div>
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            <h2 className="text-xl font-bold tracking-tight text-foreground">
               Good{getGreeting()}, {name} 👋
             </h2>
-            <p className="text-sm sm:text-base text-muted-foreground max-w-md leading-relaxed">
+            <p className="text-sm text-muted-foreground max-w-md leading-relaxed">
               Here&apos;s your workspace at a glance — jump into any tool or pick up where you left off.
             </p>
           </div>
           <Link
             href="/analyze"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold gradient-primary text-white shadow-md shadow-primary/15 hover:opacity-95 transition-opacity"
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium gradient-primary text-white shadow-md shadow-primary/15 hover:opacity-95 transition-opacity"
           >
             New analysis
             <ArrowRight className="size-4" />
@@ -226,14 +226,14 @@ export function OverviewShell({ user, totalAnalyses, recentAnalyses }: OverviewS
                     action.ring
                   )}
                 >
-                  <CardContent className="p-4 sm:p-5">
+                  <CardContent className="p-3.5 sm:p-4">
                     <div
                       className={cn(
-                        "mb-3 inline-flex size-10 items-center justify-center rounded-xl transition-transform group-hover:scale-105",
+                        "mb-2.5 inline-flex size-9 items-center justify-center rounded-xl transition-transform group-hover:scale-105",
                         action.bg
                       )}
                     >
-                      <action.icon className={cn("size-5", action.color)} />
+                      <action.icon className={cn("size-4", action.color)} />
                     </div>
                     <p className="font-semibold text-sm text-foreground group-hover:text-primary transition-colors">
                       {action.label}
@@ -269,19 +269,19 @@ export function OverviewShell({ user, totalAnalyses, recentAnalyses }: OverviewS
 
         {recentAnalyses.length === 0 ? (
           <Card className="border-dashed border-border/80 bg-muted/10">
-            <CardContent className="flex flex-col items-center justify-center py-14 sm:py-16 text-center">
-              <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary/10 border border-primary/15">
-                <BarChart2 className="size-7 text-primary/60" />
+            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="mb-3 flex size-12 items-center justify-center rounded-2xl bg-primary/10 border border-primary/15">
+                <BarChart2 className="size-6 text-primary/60" />
               </div>
-              <CardTitle className="text-base font-semibold text-foreground">
+              <CardTitle className="text-sm font-semibold text-foreground">
                 No analyses yet
               </CardTitle>
-              <CardDescription className="mt-1.5 max-w-xs">
+              <CardDescription className="mt-1 text-xs max-w-xs">
                 Start by analyzing code or scanning a website — results appear here instantly.
               </CardDescription>
               <Link
                 href="/analyze"
-                className="mt-5 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-2.5 text-sm font-semibold gradient-primary text-white shadow-sm"
+                className="mt-4 inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2 text-sm font-medium gradient-primary text-white shadow-sm"
               >
                 Analyze your first snippet
                 <ArrowRight className="size-4" />
@@ -357,19 +357,19 @@ function StatCard({
           accent
         )}
       />
-      <CardContent className="relative p-4 sm:p-5">
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <span className="text-[11px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide leading-tight">
+      <CardContent className="relative p-3.5 sm:p-4">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide leading-tight">
             {label}
           </span>
-          <div className={cn("flex size-8 items-center justify-center rounded-lg shrink-0", bgClass)}>
-            <Icon className={cn("size-4", iconClass)} />
+          <div className={cn("flex size-7 items-center justify-center rounded-lg shrink-0", bgClass)}>
+            <Icon className={cn("size-3.5", iconClass)} />
           </div>
         </div>
         <p
           className={cn(
             "font-bold text-foreground tracking-tight",
-            smallValue ? "text-lg sm:text-xl" : "text-2xl sm:text-3xl"
+            smallValue ? "text-sm font-semibold" : "text-xl"
           )}
         >
           {value}
