@@ -3,8 +3,19 @@ import type { AnalysisResult, AnalyzeRequest, Language } from "@/types";
 import { detectLanguage } from "@/lib/utils";
 import { DEFAULT_TEXT_MODEL, resolveTextModel } from "@/lib/ai-models";
 import { computeQualityScore } from "@/lib/activity";
+import { LANGUAGE_PROMPT_LIST } from "@/lib/language-config";
 
 const MODEL = DEFAULT_TEXT_MODEL;
+
+const LIQUID_GUIDANCE = `
+For Shopify Liquid (.liquid) code, validate:
+- Liquid tags ({% %}) and output tags ({{ }}) syntax
+- Filters, objects, and theme variables (product, collection, cart, shop, etc.)
+- Section/snippet structure and {% schema %} JSON blocks
+- Theme performance (avoid nested loops, excessive all_products queries)
+- Shopify Online Store 2.0 best practices (sections, blocks, app blocks)
+- Accessibility in theme markup and responsive layout issues
+Suggest corrected Liquid with valid tags, filters, and schema where applicable.`;
 
 function getMockResult(req: AnalyzeRequest): AnalysisResult {
   const lang = req.language ?? detectLanguage(req.code, req.fileName);
@@ -22,6 +33,7 @@ function getMockResult(req: AnalyzeRequest): AnalysisResult {
     fixedCode: req.code
       .replace(/var /g, "const ")
       .replace(/console\.log/g, "// console.log"),
+    optimizedCode: req.code.replace(/for\s*\(/g, "for (const item of "),
     diff: lines.slice(0, 8).map((content, i) => ({
       type: (i === 2 ? "removed" : i === 3 ? "added" : "unchanged") as
         | "removed"
@@ -43,6 +55,20 @@ function getMockResult(req: AnalyzeRequest): AnalysisResult {
         message: "Missing return type annotation",
         type: "TypeError",
       },
+    ],
+    codeSmells: [
+      {
+        id: "SMELL-001",
+        title: "Long function",
+        description: "Function exceeds recommended length and mixes multiple responsibilities.",
+        line: 1,
+        recommendation: "Extract validation, data fetching, and rendering into separate functions.",
+      },
+    ],
+    improvements: [
+      "Add input validation at function entry",
+      "Use async/await instead of nested callbacks",
+      "Add error boundaries for edge cases",
     ],
     securityIssues:
       req.analysisType === "error"
@@ -96,41 +122,66 @@ function buildAnalysisPrompt(req: AnalyzeRequest): string {
   const langHint =
     req.language && req.language !== "unknown"
       ? `Language: ${req.language}`
-      : "Detect the language automatically.";
+      : "Detect the language automatically (including Shopify Liquid, HTML, CSS, JS/TS, React/Next.js, Node.js, PHP, Python, Java, C++, JSON).";
 
   const errorSection = req.errorMessage
     ? `\n\nError Message / Stack Trace:\n\`\`\`\n${req.errorMessage}\n\`\`\``
     : "";
 
+  const instructionsSection = req.userInstructions
+    ? `\n\nUser instructions (apply these changes/fixes/improvements):\n${req.userInstructions}`
+    : "";
+
+  const followUpSection =
+    req.followUpMessages && req.followUpMessages.length > 0
+      ? `\n\nConversation history:\n${req.followUpMessages
+          .map((m) => `${m.role.toUpperCase()}: ${m.content}`)
+          .join("\n")}`
+      : "";
+
+  const previousFixSection = req.previousFixedCode
+    ? `\n\nPrevious fixed version (refine based on follow-up):\n\`\`\`\n${req.previousFixedCode}\n\`\`\``
+    : "";
+
   const typeInstructions: Record<string, string> = {
-    error: "Focus on finding and fixing bugs and errors.",
-    security: "Focus on identifying and fixing security vulnerabilities (OWASP, CWE).",
-    performance: "Focus on identifying and fixing performance bottlenecks.",
-    all: "Perform a comprehensive analysis: bugs, security, and performance.",
+    error: "Focus on bugs, runtime errors, missing edge cases, and bad practices.",
+    security: "Focus on security vulnerabilities (OWASP, CWE), injection, XSS, auth issues.",
+    performance: "Focus on performance bottlenecks, inefficient algorithms, and memory issues.",
+    all: "Comprehensive analysis: bugs, errors, security, performance, code smells, bad practices, and missing edge cases.",
   };
 
-  return `You are CodeMedic AI — an expert code analysis engine. Analyze the code below and return ONLY valid JSON matching the exact schema. No markdown, no text outside the JSON object.
+  const liquidNote = req.language === "liquid" || /{%|{{/.test(req.code) ? LIQUID_GUIDANCE : "";
+
+  return `You are CodeMedic AI — an expert multi-language code analysis engine. Analyze the code below and return ONLY valid JSON matching the exact schema. No markdown, no text outside the JSON object.
 
 ${langHint}
 Analysis focus: ${typeInstructions[req.analysisType]}
 ${req.fileName ? `File: ${req.fileName}` : ""}
+${liquidNote}
 
 Code to analyze:
 \`\`\`
 ${req.code}
 \`\`\`
-${errorSection}
+${errorSection}${instructionsSection}${followUpSection}${previousFixSection}
+
+Analyze for: bugs, errors, performance issues, security issues, bad practices, code smells, and missing edge cases.
+If user instructions are provided, prioritize those changes in fixedCode.
+For React/Next.js code, check hooks rules, SSR compatibility, and App Router patterns.
 
 Return ONLY this JSON (no extra text before or after):
 {
-  "language": "<typescript|javascript|python|rust|go|java|cpp|csharp|php|ruby|swift|kotlin|unknown>",
+  "language": "<${LANGUAGE_PROMPT_LIST}>",
   "explanation": "<2-4 sentence explanation of what the code does and what problems were found>",
   "rootCause": "<1-2 sentence precise root cause of the primary issue>",
-  "fixedCode": "<complete corrected and runnable code>",
+  "fixedCode": "<complete corrected code addressing all issues and user instructions>",
+  "optimizedCode": "<optional performance-optimized version, or empty string if not applicable>",
   "diff": [{ "type": "added"|"removed"|"unchanged", "content": "<line>", "lineNumber": <number> }],
   "errors": [{ "line": <number|null>, "column": <number|null>, "message": "<description>", "type": "<ErrorType>" }],
+  "codeSmells": [{ "id": "SMELL-001", "title": "<title>", "description": "<description>", "line": <number|null>, "recommendation": "<fix>" }],
   "securityIssues": [{ "id": "SEC-001", "title": "<title>", "severity": "critical"|"high"|"medium"|"low"|"info", "description": "<description>", "line": <number|null>, "recommendation": "<fix>", "cweId": "<CWE-XXX|null>" }],
   "performanceIssues": [{ "id": "PERF-001", "title": "<title>", "impact": "high"|"medium"|"low", "description": "<description>", "line": <number|null>, "recommendation": "<fix>", "estimatedGain": "<gain|null>" }],
+  "improvements": ["<suggested improvement 1>", "<suggested improvement 2>"],
   "confidence": <0.0-1.0>
 }`;
 }
@@ -159,7 +210,7 @@ export async function analyzeCode(
         {
           role: "system",
           content:
-            "You are a code analysis engine. Always respond with valid JSON only. Never include markdown fences or any text outside the JSON object.",
+            "You are a code analysis engine supporting many languages including Shopify Liquid. Always respond with valid JSON only. Never include markdown fences or any text outside the JSON object.",
         },
         { role: "user", content: prompt },
       ],
@@ -173,7 +224,6 @@ export async function analyzeCode(
 
   let raw = completion.choices[0]?.message?.content?.trim() ?? "";
 
-  // Strip accidental markdown fences
   raw = raw.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
 
   let parsed: Omit<AnalysisResult, "id" | "analysisType" | "createdAt">;
@@ -183,18 +233,21 @@ export async function analyzeCode(
     throw new Error(`Model returned invalid JSON: ${raw.slice(0, 200)}`);
   }
 
-  return {
+  const result: AnalysisResult = {
     id: crypto.randomUUID(),
     analysisType: req.analysisType,
     createdAt: new Date().toISOString(),
-    language: (parsed.language ?? req.language ?? "unknown") as Language,
+    language: (parsed.language ?? req.language ?? detectLanguage(req.code, req.fileName) ?? "unknown") as Language,
     explanation: parsed.explanation ?? "",
     rootCause: parsed.rootCause ?? "",
     fixedCode: parsed.fixedCode ?? req.code,
+    optimizedCode: parsed.optimizedCode || undefined,
     diff: parsed.diff ?? [],
     errors: parsed.errors ?? [],
+    codeSmells: parsed.codeSmells ?? [],
     securityIssues: parsed.securityIssues ?? [],
     performanceIssues: parsed.performanceIssues ?? [],
+    improvements: parsed.improvements ?? [],
     confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.9,
     qualityScore: computeQualityScore({
       errors: parsed.errors,
@@ -203,4 +256,6 @@ export async function analyzeCode(
       confidence: parsed.confidence,
     }),
   };
+
+  return result;
 }

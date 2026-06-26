@@ -1,4 +1,7 @@
 export type Language =
+  | "liquid"
+  | "html"
+  | "css"
   | "typescript"
   | "javascript"
   | "python"
@@ -8,6 +11,7 @@ export type Language =
   | "cpp"
   | "csharp"
   | "php"
+  | "json"
   | "ruby"
   | "swift"
   | "kotlin"
@@ -50,6 +54,14 @@ export interface DiffLine {
   lineNumber: number;
 }
 
+export interface CodeSmell {
+  id: string;
+  title: string;
+  description: string;
+  line?: number;
+  recommendation: string;
+}
+
 export interface AnalysisResult {
   id: string;
   language: Language;
@@ -60,10 +72,18 @@ export interface AnalysisResult {
   securityIssues: SecurityIssue[];
   performanceIssues: PerformanceIssue[];
   errors: CodeError[];
+  codeSmells?: CodeSmell[];
+  improvements?: string[];
+  optimizedCode?: string;
   confidence: number;
   qualityScore?: number;
   analysisType: AnalysisType;
   createdAt: string;
+}
+
+export interface AnalyzeFollowUpMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
 export interface AnalysisRecord {
@@ -82,9 +102,12 @@ export interface AnalysisRecord {
 export interface AnalyzeRequest {
   code: string;
   errorMessage?: string;
+  userInstructions?: string;
   language?: Language;
   analysisType: AnalysisType;
   fileName?: string;
+  followUpMessages?: AnalyzeFollowUpMessage[];
+  previousFixedCode?: string;
 }
 
 export interface AnalyzeResponse {

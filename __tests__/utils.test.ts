@@ -47,6 +47,18 @@ describe("detectLanguage", () => {
   it("returns unknown for unrecognised code", () => {
     expect(detectLanguage("lorem ipsum dolor sit amet")).toBe("unknown");
   });
+  it("detects liquid from .liquid extension", () => {
+    expect(detectLanguage("", "section.liquid")).toBe("liquid");
+  });
+  it("detects liquid from tags", () => {
+    expect(detectLanguage("{% schema %}\n{ \"name\": \"Hero\" }\n{% endschema %}")).toBe("liquid");
+  });
+  it("detects html from doctype", () => {
+    expect(detectLanguage("<!DOCTYPE html>\n<html><body></body></html>")).toBe("html");
+  });
+  it("detects json from structure", () => {
+    expect(detectLanguage('{\n  "name": "test"\n}')).toBe("json");
+  });
 });
 
 describe("formatBytes", () => {

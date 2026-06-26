@@ -1,6 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import type { Language } from "@/types";
+import { EXT_TO_LANGUAGE } from "@/lib/language-config";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -9,36 +10,33 @@ export function cn(...inputs: ClassValue[]) {
 export function detectLanguage(code: string, fileName?: string): Language {
   if (fileName) {
     const ext = fileName.split(".").pop()?.toLowerCase();
-    const extMap: Record<string, Language> = {
-      ts: "typescript",
-      tsx: "typescript",
-      js: "javascript",
-      jsx: "javascript",
-      mjs: "javascript",
-      py: "python",
-      rs: "rust",
-      go: "go",
-      java: "java",
-      cpp: "cpp",
-      cc: "cpp",
-      cxx: "cpp",
-      cs: "csharp",
-      php: "php",
-      rb: "ruby",
-      swift: "swift",
-      kt: "kotlin",
-    };
-    if (ext && ext in extMap) return extMap[ext];
+    if (ext && ext in EXT_TO_LANGUAGE) return EXT_TO_LANGUAGE[ext];
   }
 
+  if (/{%\s*(schema|section|liquid|assign|if|for|render|include)/.test(code)) {
+    return "liquid";
+  }
+  if (/^\s*<!DOCTYPE html|<html[\s>]|<head[\s>]|<body[\s>]/i.test(code)) {
+    return "html";
+  }
+  if (/^\s*@(?:media|import|keyframes|font-face)|^\s*[\w.#-]+\s*\{/.test(code)) {
+    return "css";
+  }
+  if (/^\s*[\[{]/.test(code.trim()) && /"[\w-]+"\s*:/.test(code)) {
+    return "json";
+  }
   if (/^(import|export|const|let|interface|type\s+\w+\s*=|:\s*(string|number|boolean|void))/.test(code)) {
     return "typescript";
+  }
+  if (/^(function |const \w+ = \(|=>|require\(|module\.exports)/.test(code)) {
+    return "javascript";
   }
   if (/^(def |import |from .+ import|print\(|if __name__)/.test(code)) return "python";
   if (/^(fn |use |pub |let mut |impl )/.test(code)) return "rust";
   if (/^(package |func |import \(|:= )/.test(code)) return "go";
   if (/^(public class|private |protected |@Override)/.test(code)) return "java";
   if (/<\?php/.test(code)) return "php";
+  if (/^#include|^using namespace/.test(code)) return "cpp";
 
   return "unknown";
 }
