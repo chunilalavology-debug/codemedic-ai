@@ -16,6 +16,7 @@ import {
   removeAvatarAction,
   updateProfileAction,
 } from "@/lib/auth/profile-actions";
+import { compressAvatarFile } from "@/lib/avatar-compress";
 import { getUserInitials, getUserProfile } from "@/lib/profile";
 
 interface ProfileFormProps {
@@ -52,8 +53,9 @@ export function ProfileForm({ user }: ProfileFormProps) {
 
     setUploadingAvatar(true);
     try {
+      const compressed = await compressAvatarFile(file);
       const formData = new FormData();
-      formData.append("avatar", file);
+      formData.append("avatar", compressed);
 
       const res = await fetch("/api/profile/avatar", {
         method: "POST",
@@ -149,7 +151,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <div className="flex-1 space-y-2">
           <p className="text-sm font-medium text-foreground">Profile photo</p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Upload a JPG, PNG, WebP, or GIF. Max size 2 MB.
+            Upload a JPG, PNG, WebP, or GIF. Max 2 MB (auto-compressed for your profile).
           </p>
           {avatarUrl && (
             <Button

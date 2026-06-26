@@ -30,9 +30,10 @@ export async function updateProfileAction(input: ProfileUpdateInput) {
     }
   }
 
+  // Only update profile text fields — do not spread user_metadata or avatar_url
+  // can be restored from a stale JWT after the user removed their photo.
   const { error } = await supabase.auth.updateUser({
     data: {
-      ...user.user_metadata,
       full_name: input.full_name.trim(),
       nickname: input.nickname.trim(),
       bio: input.bio.trim(),
@@ -59,11 +60,11 @@ export async function removeAvatarAction() {
     return { ok: false as const, message: "Not authenticated" };
   }
 
-  const metadata = { ...(user.user_metadata as Record<string, unknown>) };
-  delete metadata.avatar_url;
-
+  // Supabase merges metadata — omitting a key does not remove it; set null explicitly.
   const { error } = await supabase.auth.updateUser({
-    data: metadata,
+    data: {
+      avatar_url: null,
+    },
   });
 
   if (error) {

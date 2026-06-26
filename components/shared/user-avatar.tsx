@@ -24,7 +24,11 @@ export function UserAvatar({
   return (
     <Avatar size={size} className={className}>
       {avatarUrl ? (
-        <AvatarImage src={avatarUrl} alt={getUserProfile(user).displayName} />
+        <AvatarImage
+          key={avatarUrl}
+          src={avatarUrl}
+          alt={getUserProfile(user).displayName}
+        />
       ) : null}
       <AvatarFallback
         className={cn(

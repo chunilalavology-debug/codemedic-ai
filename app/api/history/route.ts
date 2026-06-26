@@ -61,6 +61,14 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get("id");
+    const idsParam = searchParams.get("ids");
+
+    if (idsParam) {
+      const ids = idsParam.split(",").filter(Boolean);
+      const { deleteAnalyses } = await import("@/lib/history");
+      const deleted = await deleteAnalyses(ids, user.id);
+      return NextResponse.json({ success: true, deleted });
+    }
 
     if (!id) {
       return NextResponse.json(

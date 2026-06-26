@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit, rateLimitKey } from "@/lib/rate-limit";
 import type { User } from "@supabase/supabase-js";
 
 type AuthSuccess = {
@@ -13,7 +14,9 @@ type AuthFailure = {
   response: NextResponse;
 };
 
-export async function requireApiUser(): Promise<AuthSuccess | AuthFailure> {
+export async function requireApiUser(
+  rateLimitRoute?: string
+): Promise<AuthSuccess | AuthFailure> {
   const supabase = await createClient();
   const {
     data: { user },
@@ -27,6 +30,13 @@ export async function requireApiUser(): Promise<AuthSuccess | AuthFailure> {
         { status: 401 }
       ),
     };
+  }
+
+  if (rateLimitRoute) {
+    const limited = checkRateLimit(rateLimitKey(user.id, rateLimitRoute));
+    if (limited) {
+      return { ok: false, response: limited };
+    }
   }
 
   return { ok: true, user, supabase };

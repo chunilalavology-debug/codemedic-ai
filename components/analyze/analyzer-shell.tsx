@@ -320,6 +320,13 @@ export function AnalyzerShell() {
                 </Badge>
               )}
               <div className="flex items-center gap-2 ml-auto">
+                {result.qualityScore != null && (
+                  <>
+                    <span className="text-xs text-muted-foreground">Quality</span>
+                    <Progress value={result.qualityScore} className="w-16 h-1.5" />
+                    <span className="text-xs font-medium tabular-nums">{result.qualityScore}%</span>
+                  </>
+                )}
                 <span className="text-xs text-muted-foreground">Confidence</span>
                 <Progress value={result.confidence * 100} className="w-20 h-1.5" />
                 <span className="text-xs font-medium tabular-nums">

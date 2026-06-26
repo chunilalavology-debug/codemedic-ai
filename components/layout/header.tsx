@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { LogOut, User } from "lucide-react";
+import { LogOut, User, MessageSquare, Command } from "lucide-react";
 import { toast } from "sonner";
+import { usePlatform } from "@/lib/platform-context";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { UserAvatar } from "@/components/shared/user-avatar";
+import { Button } from "@/components/ui/button";
+import { MobileMenuButton } from "@/components/layout/sidebar";
 import { signOut } from "@/lib/auth/sign-out";
 import { getUserProfile } from "@/lib/profile";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
@@ -19,6 +22,7 @@ interface HeaderProps {
 const MENU_WIDTH = 224;
 
 export function Header({ title, user }: HeaderProps) {
+  const { toggleChat, openCommand } = usePlatform();
   const [open, setOpen] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -154,10 +158,32 @@ export function Header({ title, user }: HeaderProps) {
       : null;
 
   return (
-    <header className="relative z-20 flex h-16 shrink-0 items-center justify-between border-b border-border px-6">
-      <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+    <header className="relative z-20 flex h-16 shrink-0 items-center justify-between border-b border-border px-4 sm:px-6 gap-2">
+      <div className="flex items-center gap-2 min-w-0">
+        <MobileMenuButton />
+        <h1 className="text-lg font-semibold text-foreground truncate">{title}</h1>
+      </div>
 
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="hidden sm:inline-flex"
+          onClick={openCommand}
+          aria-label="Command palette (Ctrl+K)"
+          title="Ctrl+K"
+        >
+          <Command className="size-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleChat}
+          aria-label="AI assistant (Ctrl+Shift+A)"
+          title="AI Assistant"
+        >
+          <MessageSquare className="size-4" />
+        </Button>
         <ThemeToggle />
 
         <div ref={containerRef} className="relative">

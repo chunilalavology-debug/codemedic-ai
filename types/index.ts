@@ -61,6 +61,7 @@ export interface AnalysisResult {
   performanceIssues: PerformanceIssue[];
   errors: CodeError[];
   confidence: number;
+  qualityScore?: number;
   analysisType: AnalysisType;
   createdAt: string;
 }

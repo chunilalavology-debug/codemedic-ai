@@ -7,9 +7,9 @@ import { toast } from "sonner";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { ProfileForm } from "@/components/settings/profile-form";
 import { PasswordForm } from "@/components/settings/password-form";
+import { ModelSettingsForm } from "@/components/settings/model-settings-form";
 import { signOut } from "@/lib/auth/sign-out";
 import { cn } from "@/lib/utils";
 
@@ -119,27 +119,9 @@ export function SettingsShell({ user }: SettingsShellProps) {
       <Section
         icon={Shield}
         title="AI Engine"
-        description="Powered by Groq — ultra-fast inference"
+        description="Choose models and view provider limits"
       >
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Provider</p>
-            <Badge className="bg-primary/10 text-primary border-primary/20">Groq</Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Model</p>
-            <Badge variant="outline" className="font-mono text-xs">llama-3.3-70b-versatile</Badge>
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Daily limit</p>
-            <Badge variant="secondary" className="text-xs">14,400 requests / day</Badge>
-          </div>
-          <Separator />
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Llama 3.3 70B via Groq delivers fast, high-quality code analysis.
-            Your API key is stored server-side and never exposed to the browser.
-          </p>
-        </div>
+        <ModelSettingsForm />
       </Section>
 
       {/* About */}

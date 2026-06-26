@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { analyzeCode } from "@/lib/claude";
 import { saveAnalysis } from "@/lib/history";
 import { requireApiUser } from "@/lib/auth/api-auth";
+import { getUserPreferences } from "@/lib/preferences";
+import { logActivity } from "@/lib/activity";
 import type { AnalyzeRequest, AnalyzeResponse } from "@/types";
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireApiUser();
+    const auth = await requireApiUser("analyze");
     if (!auth.ok) return auth.response;
 
     const body = (await request.json()) as AnalyzeRequest;
@@ -25,10 +27,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await analyzeCode(body);
+    const prefs = await getUserPreferences(auth.supabase, auth.user.id);
+    const result = await analyzeCode(body, prefs.preferredTextModel);
 
     try {
-      await saveAnalysis(body, result, auth.user.id);
+      const saved = await saveAnalysis(body, result, auth.user.id);
+      await logActivity(auth.supabase, auth.user.id, {
+        action: "analysis.created",
+        entityType: "analysis",
+        entityId: saved?.id,
+        title: saved?.title ?? "Code analysis",
+        workspaceId: prefs.activeWorkspaceId,
+        metadata: { qualityScore: result.qualityScore, language: result.language },
+      });
     } catch {
       // non-fatal
     }

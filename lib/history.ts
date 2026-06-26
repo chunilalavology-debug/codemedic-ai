@@ -98,3 +98,18 @@ export async function deleteAnalysis(id: string, userId: string): Promise<void> 
 
   if (error) throw new Error(error.message);
 }
+
+export async function deleteAnalyses(ids: string[], userId: string): Promise<number> {
+  if (!ids.length) return 0;
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("analyses")
+    .delete()
+    .in("id", ids)
+    .eq("user_id", userId)
+    .select("id");
+
+  if (error) throw new Error(error.message);
+  return data?.length ?? 0;
+}

@@ -28,7 +28,7 @@ import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
 import type { ScanResult, ScanIssue, Severity } from "@/types";
 
-type ScanMode = "website" | "github";
+type ScanMode = "website" | "github" | "gitlab";
 
 const severityOrder: Record<Severity, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 
@@ -127,7 +127,7 @@ export function ScanShell() {
         <CardContent className="p-4 space-y-4">
           {/* Mode tabs */}
           <div className="flex gap-2">
-            {(["website", "github"] as const).map((m) => (
+            {(["website", "github", "gitlab"] as const).map((m) => (
               <button
                 key={m}
                 onClick={() => { setMode(m); setUrl(""); }}

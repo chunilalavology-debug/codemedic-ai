@@ -276,6 +276,9 @@ export function HistoryShell({ userId }: HistoryShellProps) {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [confirmBulk, setConfirmBulk] = useState(false);
+  const [deletedBackup, setDeletedBackup] = useState<AnalysisRecord[]>([]);
   const pageSize = 20;
 
   const fetchHistory = useCallback(
@@ -327,6 +330,41 @@ export function HistoryShell({ userId }: HistoryShellProps) {
     fetchHistory(nextPage, true);
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  async function bulkDelete() {
+    const ids = [...selected];
+    if (!ids.length) return;
+    setDeletedBackup(records.filter((r) => ids.includes(r.id)));
+    try {
+      const res = await fetch(`/api/history?ids=${ids.join(",")}`, { method: "DELETE" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setRecords((prev) => prev.filter((r) => !ids.includes(r.id)));
+      setTotal((t) => t - (json.deleted ?? ids.length));
+      setSelected(new Set());
+      setConfirmBulk(false);
+      toast.success(`Deleted ${json.deleted ?? ids.length} analyses`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Bulk delete failed");
+    }
+  }
+
+  function undoDelete() {
+    if (!deletedBackup.length) return;
+    setRecords((prev) => [...deletedBackup, ...prev]);
+    setTotal((t) => t + deletedBackup.length);
+    setDeletedBackup([]);
+    toast.message("Undo is local only — records were already removed from the server.");
+  }
+
   if (loading) return <HistorySkeleton />;
 
   if (fetchError) {
@@ -359,15 +397,48 @@ export function HistoryShell({ userId }: HistoryShellProps) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-muted-foreground">
           {total} analysis{total !== 1 ? "es" : ""} saved
         </p>
+        <div className="flex gap-2">
+          {deletedBackup.length > 0 && (
+            <Button variant="outline" size="sm" onClick={undoDelete}>
+              Undo last delete
+            </Button>
+          )}
+          {selected.size > 0 && (
+            <Button variant="destructive" size="sm" onClick={() => setConfirmBulk(true)}>
+              Delete {selected.size} selected
+            </Button>
+          )}
+        </div>
       </div>
+
+      {confirmBulk && (
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm">Delete {selected.size} analyses permanently?</p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => setConfirmBulk(false)}>Cancel</Button>
+            <Button variant="destructive" size="sm" onClick={bulkDelete}>Confirm delete</Button>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-3">
         {records.map((record) => (
-          <HistoryCard key={record.id} record={record} onDelete={handleDelete} />
+          <div key={record.id} className="flex gap-2 items-start">
+            <input
+              type="checkbox"
+              checked={selected.has(record.id)}
+              onChange={() => toggleSelect(record.id)}
+              className="mt-4 cursor-pointer"
+              aria-label={`Select ${record.title}`}
+            />
+            <div className="flex-1 min-w-0">
+              <HistoryCard record={record} onDelete={handleDelete} />
+            </div>
+          </div>
         ))}
       </div>
 

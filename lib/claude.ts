@@ -1,8 +1,10 @@
 import Groq from "groq-sdk";
 import type { AnalysisResult, AnalyzeRequest, Language } from "@/types";
 import { detectLanguage } from "@/lib/utils";
+import { DEFAULT_TEXT_MODEL, resolveTextModel } from "@/lib/ai-models";
+import { computeQualityScore } from "@/lib/activity";
 
-const MODEL = "llama-3.3-70b-versatile";
+const MODEL = DEFAULT_TEXT_MODEL;
 
 function getMockResult(req: AnalyzeRequest): AnalysisResult {
   const lang = req.language ?? detectLanguage(req.code, req.fileName);
@@ -86,6 +88,7 @@ function getMockResult(req: AnalyzeRequest): AnalysisResult {
             },
           ],
     confidence: 0.91,
+    qualityScore: 0,
   };
 }
 
@@ -132,28 +135,41 @@ Return ONLY this JSON (no extra text before or after):
 }`;
 }
 
-export async function analyzeCode(req: AnalyzeRequest): Promise<AnalysisResult> {
+export async function analyzeCode(
+  req: AnalyzeRequest,
+  modelId?: string
+): Promise<AnalysisResult> {
+  const model = resolveTextModel(modelId);
   if (!process.env.GROQ_API_KEY) {
     await new Promise((r) => setTimeout(r, 1800));
-    return getMockResult(req);
+    const mock = getMockResult(req);
+    return { ...mock, qualityScore: computeQualityScore(mock) };
   }
 
   const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
   const prompt = buildAnalysisPrompt(req);
 
-  const completion = await groq.chat.completions.create({
-    model: MODEL,
-    max_tokens: 8192,
-    temperature: 0.1,
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a code analysis engine. Always respond with valid JSON only. Never include markdown fences or any text outside the JSON object.",
-      },
-      { role: "user", content: prompt },
-    ],
-  });
+  let completion;
+  try {
+    completion = await groq.chat.completions.create({
+      model,
+      max_tokens: 8192,
+      temperature: 0.1,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a code analysis engine. Always respond with valid JSON only. Never include markdown fences or any text outside the JSON object.",
+        },
+        { role: "user", content: prompt },
+      ],
+    });
+  } catch (err) {
+    if (model !== MODEL) {
+      return analyzeCode(req, MODEL);
+    }
+    throw err;
+  }
 
   let raw = completion.choices[0]?.message?.content?.trim() ?? "";
 
@@ -180,5 +196,11 @@ export async function analyzeCode(req: AnalyzeRequest): Promise<AnalysisResult> 
     securityIssues: parsed.securityIssues ?? [],
     performanceIssues: parsed.performanceIssues ?? [],
     confidence: typeof parsed.confidence === "number" ? parsed.confidence : 0.9,
+    qualityScore: computeQualityScore({
+      errors: parsed.errors,
+      securityIssues: parsed.securityIssues,
+      performanceIssues: parsed.performanceIssues,
+      confidence: parsed.confidence,
+    }),
   };
 }

@@ -1,0 +1,35 @@
+Subject: CodeMedic AI — Project Overview, Features & Technology Stack
+
+Dear [CEO Name],
+
+I am writing to share a detailed overview of CodeMedic AI, a full-stack AI-powered developer platform that we have built to help engineering teams diagnose code issues, audit digital assets, and accelerate everyday development workflows from a single unified dashboard.
+
+CodeMedic AI is designed as an all-in-one assistant for developers. Instead of switching between separate tools for debugging, security review, design-to-code conversion, and API testing, users get everything in one place — backed by fast AI inference through Groq (Llama 3.3 70B for text analysis and Llama 4 Scout for vision-based tasks), with secure authentication and data storage powered by Supabase.
+
+At the core of the platform is the AI Code Analyzer, which allows users to paste code or upload a file, optionally attach an error message or stack trace, and receive an instant analysis covering bugs, security vulnerabilities, and performance concerns. The tool supports more than twelve programming languages including TypeScript, JavaScript, Python, Rust, Go, Java, C++, C#, PHP, Ruby, Swift, and Kotlin, with automatic language detection. Results include a plain-language explanation, root-cause identification, corrected code, a visual diff, and a categorized issue breakdown with severity levels. Every analysis is automatically saved to the user’s private history for future reference.
+
+The Website and Repository Scanner enables teams to audit live public websites or GitHub repositories for SEO gaps, security weaknesses, accessibility issues, and performance bottlenecks. Each scan produces scored reports across multiple dimensions — overall quality, SEO, security, performance, accessibility, and maintainability — along with actionable recommendations and an exportable summary that can be copied and shared with stakeholders.
+
+The Image-to-Code feature uses vision AI to convert UI screenshots and design mockups into production-ready code. Users can upload an image up to 5 MB, choose their target framework (React, Next.js, HTML/CSS, Vue, or Tailwind), and generate either a standalone component or a full page layout. Generated code can be copied or downloaded directly, making it a practical starting point for frontend development and rapid prototyping.
+
+The API Inspector provides a secure, browser-based environment for testing HTTP endpoints without exposing credentials client-side. It supports all standard HTTP methods, custom headers, request bodies, and Bearer or Basic authentication. Responses are displayed with status codes, latency, headers, and formatted body content, along with auto-generated curl, fetch, and axios code snippets. Built-in checks flag slow responses, server errors, and missing security headers.
+
+Beyond the core tools, the platform includes a personalized Overview Dashboard with usage statistics and quick-action shortcuts, a searchable Analysis History with pagination and delete capabilities, and a Reports section with visual analytics including activity trends, language breakdowns, and analysis-type distribution over time. Users can manage their full profile — including photo, nickname, bio, location, website, password, and theme preferences — from a dedicated Settings page. Authentication is handled through Supabase Auth with email/password sign-up, login, forgot-password, and password-reset flows, and all dashboard routes are protected by server-side session validation via Supabase SSR (Server-Side Rendering) middleware.
+
+From a security standpoint, the platform enforces authentication on all sensitive API routes, applies PostgreSQL Row Level Security (RLS) so each user can only read, insert, and delete their own records, blocks internal and private URLs in scan and API testing features to prevent SSRF (Server-Side Request Forgery) attacks, and keeps all AI API keys strictly on the server — never exposed to the browser.
+
+Regarding the technology stack, the frontend and backend are built as a single application using Next.js version 16.2.9 with the App Router architecture, React version 19.2.4, and TypeScript version 5 for type-safe development. The user interface is styled with Tailwind CSS version 4 and built using shadcn/ui and Base UI component libraries, with Framer Motion for animations, Lucide React for icons, Recharts for analytics charts, and Sonner for toast notifications. Code output is rendered with React Syntax Highlighter, and the website scanner uses Cheerio for HTML parsing.
+
+For backend services and data, we use Supabase as our primary cloud platform. Supabase Auth handles user registration, login, sessions, and password management. The database is Supabase PostgreSQL, where we store all code analysis history in a dedicated `analyses` table with UUID primary keys, JSONB columns for structured AI results, indexed fields for user ID, language, and timestamps, and automatic `updated_at` triggers. Row Level Security policies ensure that users can only access their own analysis records. User profile data (name, nickname, bio, avatar, etc.) is stored in Supabase Auth user metadata. We integrate Supabase through `@supabase/supabase-js` (v2.108) and `@supabase/ssr` (v0.12) for secure cookie-based sessions on both client and server. Supabase Storage is also configured for profile avatar uploads.
+
+For AI capabilities, we use the Groq SDK (v1.3) connected to Groq’s cloud inference API. Text-based features — code analysis, website scanning, and GitHub repo auditing — run on the Llama 3.3 70B Versatile model, while the Image-to-Code vision feature runs on the Llama 4 Scout model. This setup delivers sub-3-second response times on Groq’s free tier (up to 14,400 requests per day).
+
+The application is deployed on Vercel (Mumbai region — bom1) with the live production URL at codemedic-ai.vercel.app. The source code is version-controlled on GitHub. For quality assurance, we use Vitest (v4.1) with Testing Library for unit tests, and ESLint v9 with the Next.js config for code linting. The current application version is v0.2.0.
+
+In summary, CodeMedic AI consolidates multiple developer workflows into one intelligent platform — built on a modern stack of Next.js 16, React 19, TypeScript, Tailwind CSS 4, Supabase (Auth + PostgreSQL + RLS), and Groq AI — reducing tool fragmentation, speeding up debugging and code review, and giving teams AI-assisted insights they can act on immediately. I would be happy to walk you through a live demo or discuss next steps such as production rollout, user onboarding, or roadmap priorities at your convenience.
+
+Best regards,
+Shashi Thakur
+[Your Title / Role]
+[Your Email]
+[Your Phone — optional]

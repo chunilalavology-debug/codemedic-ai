@@ -4,13 +4,15 @@ import Groq from "groq-sdk";
 import { v4 as uuidv4 } from "uuid";
 import { requireApiUser } from "@/lib/auth/api-auth";
 import { isBlockedUrl, normalizeHttpUrl } from "@/lib/url-security";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { logActivity } from "@/lib/activity";
 import type { ScanResult, ScanIssue, SeoMetrics, ScanScores } from "@/types";
 
 const MODEL = "llama-3.3-70b-versatile";
 
 export async function POST(request: NextRequest) {
   try {
-    const auth = await requireApiUser();
+    const auth = await requireApiUser("scan");
     if (!auth.ok) return auth.response;
 
     const body = await request.json();
@@ -37,7 +39,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: true, data: result });
     }
 
+    if (type === "gitlab") {
+      const result = await scanGitLabRepo(normalizedUrl, auth.user.id, auth.supabase);
+      return NextResponse.json({ success: true, data: result });
+    }
+
     const result = await scanWebsite(normalizedUrl);
+    await logActivity(auth.supabase, auth.user.id, {
+      action: "scan.completed",
+      entityType: "website",
+      title: `Scanned ${normalizedUrl}`,
+    });
     return NextResponse.json({ success: true, data: result });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Scan failed";
@@ -240,6 +252,69 @@ function analyzeRepoStructure(
   if (isStale) issues.push({ id: "CODE-002", category: "code", severity: "low", title: "Repository Appears Inactive", description: "No commits in the last 6 months.", recommendation: "Consider archiving the repository or resuming maintenance.", });
 
   return issues;
+}
+
+async function scanGitLabRepo(
+  url: string,
+  userId: string,
+  supabase: SupabaseClient
+): Promise<ScanResult> {
+  const match = url.match(/gitlab\.com\/(.+?)\/([^/?#]+)/);
+  if (!match) throw new Error("Invalid GitLab repository URL");
+  const namespace = match[1];
+  const project = match[2];
+  const projectPath = encodeURIComponent(`${namespace}/${project}`);
+
+  let token: string | null = null;
+  const { data: integration } = await supabase
+    .from("integration_tokens")
+    .select("access_token")
+    .eq("user_id", userId)
+    .eq("provider", "gitlab")
+    .maybeSingle();
+  if (integration?.access_token) token = integration.access_token;
+
+  const headers: HeadersInit = {
+    "User-Agent": "CodeMedic-Scanner/1.0",
+    ...(token ? { "PRIVATE-TOKEN": token } : {}),
+  };
+
+  const res = await fetch(`https://gitlab.com/api/v4/projects/${projectPath}`, { headers });
+  if (!res.ok) {
+    throw new Error(
+      token
+        ? `GitLab API error: ${res.status}`
+        : `GitLab API error: ${res.status}. Add a GitLab token in Workspace for private repos.`
+    );
+  }
+
+  const repoData = await res.json() as Record<string, unknown>;
+  const issues: ScanIssue[] = [];
+  if (!repoData.description) {
+    issues.push({
+      id: "DOC-001",
+      category: "dependency",
+      severity: "low",
+      title: "Missing project description",
+      description: "GitLab project has no description.",
+      recommendation: "Add a clear project description in GitLab settings.",
+    });
+  }
+
+  const context = `GitLab: ${namespace}/${project}\nDescription: ${repoData.description ?? "N/A"}`;
+  const aiAnalysis = await analyzeWithGroq("gitlab", url, context, null, issues);
+
+  return {
+    id: uuidv4(),
+    url,
+    type: "gitlab",
+    title: `${namespace}/${project}`,
+    scores: aiAnalysis.scores,
+    issues: [...issues, ...aiAnalysis.extraIssues],
+    summary: aiAnalysis.summary,
+    recommendations: aiAnalysis.recommendations,
+    createdAt: new Date().toISOString(),
+  };
 }
 
 // ── Groq AI Analysis ─────────────────────────────────────────────────────────

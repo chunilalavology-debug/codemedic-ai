@@ -24,7 +24,10 @@ export function getUserProfile(user: User | null): UserProfile {
     fullName,
     nickname,
     displayName,
-    avatarUrl: typeof meta.avatar_url === "string" ? meta.avatar_url : null,
+    avatarUrl:
+      typeof meta.avatar_url === "string" && meta.avatar_url.trim()
+        ? meta.avatar_url
+        : null,
     bio: typeof meta.bio === "string" ? meta.bio : "",
     website: typeof meta.website === "string" ? meta.website : "",
     location: typeof meta.location === "string" ? meta.location : "",

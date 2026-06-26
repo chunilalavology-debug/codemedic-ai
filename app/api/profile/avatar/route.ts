@@ -1,29 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ensureAvatarsBucket } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
-const AVATAR_SETUP_HINT =
-  "Avatar storage is not configured. In Supabase Dashboard → SQL Editor, run the file supabase/avatars-bucket.sql (or run npm run setup:avatars locally).";
-
-function avatarStorageError(message: string) {
-  const lower = message.toLowerCase();
-
-  if (lower.includes("bucket not found")) {
-    return AVATAR_SETUP_HINT;
-  }
-
-  if (
-    lower.includes("row-level security") ||
-    lower.includes("policy") ||
-    lower.includes("permission denied")
-  ) {
-    return `Avatar upload is blocked by storage policies. ${AVATAR_SETUP_HINT}`;
-  }
-
-  return message;
-}
-
-const MAX_SIZE = 2 * 1024 * 1024;
+const MAX_SIZE = 150_000;
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -64,35 +42,26 @@ export async function POST(request: NextRequest) {
 
     if (file.size > MAX_SIZE) {
       return NextResponse.json(
-        { success: false, error: "Image must be under 2 MB" },
+        {
+          success: false,
+          error: "Image is too large after compression. Try a smaller photo.",
+        },
         { status: 400 }
       );
     }
 
-    const ext = file.type.split("/")[1]?.replace("jpeg", "jpg") ?? "jpg";
-    const path = `${user.id}/avatar.${ext}`;
+    const bytes = Buffer.from(await file.arrayBuffer());
+    const avatarUrl = `data:${file.type};base64,${bytes.toString("base64")}`;
 
-    await ensureAvatarsBucket();
-
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true, contentType: file.type });
-
-    if (uploadError) {
+    if (avatarUrl.length > MAX_SIZE) {
       return NextResponse.json(
         {
           success: false,
-          error: avatarStorageError(uploadError.message),
+          error: "Image is too large after compression. Try a smaller photo.",
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from("avatars").getPublicUrl(path);
-
-    const avatarUrl = `${publicUrl}?t=${Date.now()}`;
 
     const { error: updateError } = await supabase.auth.updateUser({
       data: {
