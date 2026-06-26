@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth/api-auth";
+import { isErrorResponse, parseJsonBody } from "@/lib/api-json";
 import { getUserWorkspaces, canManageMembers } from "@/lib/workspace";
 import { logActivity } from "@/lib/activity";
 import { sendWorkspaceInviteEmail } from "@/lib/email";
@@ -16,10 +17,20 @@ export async function POST(request: NextRequest) {
   const auth = await requireApiUser("workspaces");
   if (!auth.ok) return auth.response;
 
-  const { email, role, workspaceId } = await request.json();
+  const body = await parseJsonBody<{ email?: string; role?: string; workspaceId?: string }>(request);
+  if (isErrorResponse(body)) return body;
+
+  const { email, role, workspaceId } = body;
 
   if (!email || !workspaceId || !role) {
     return NextResponse.json({ success: false, error: "Missing fields" }, { status: 400 });
+  }
+
+  if (!["admin", "member"].includes(role)) {
+    return NextResponse.json(
+      { success: false, error: "Role must be admin or member" },
+      { status: 400 }
+    );
   }
 
   const workspaces = await getUserWorkspaces(auth.supabase, auth.user.id);

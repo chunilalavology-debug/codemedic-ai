@@ -51,13 +51,15 @@ export function WorkspaceShell({ user }: WorkspaceShellProps) {
         const wsJson = await wsRes.json();
         const intJson = await intRes.json();
         const prefJson = await prefRes.json();
-        if (wsJson.success) setWorkspaces(wsJson.data ?? []);
-        if (intJson.success) setIntegrations(intJson.data ?? []);
-        if (prefJson.success && prefJson.preferences?.activeWorkspaceId) {
-          setActiveId(prefJson.preferences.activeWorkspaceId);
-        } else if (wsJson.data?.[0]) {
-          setActiveId(wsJson.data[0].id);
+        if (wsJson.success) {
+          const list: WorkspaceItem[] = wsJson.data ?? [];
+          setWorkspaces(list);
+          const prefId = prefJson.success ? prefJson.preferences?.activeWorkspaceId : null;
+          const validId =
+            prefId && list.some((w) => w.id === prefId) ? prefId : (list[0]?.id ?? "");
+          setActiveId(validId);
         }
+        if (intJson.success) setIntegrations(intJson.data ?? []);
       } catch {
         toast.error("Failed to load workspace data");
       } finally {

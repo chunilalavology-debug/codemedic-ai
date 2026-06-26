@@ -1,20 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { requireApiUser } from "@/lib/auth/api-auth";
+import { isErrorResponse, parseJsonBody } from "@/lib/api-json";
 import { resolveTextModel } from "@/lib/ai-models";
 import { getUserPreferences } from "@/lib/preferences";
+
+function sanitizeHistory(
+  history?: { role: string; content: string }[]
+): Groq.Chat.ChatCompletionMessageParam[] {
+  return (history ?? [])
+    .slice(-6)
+    .filter(
+      (item): item is { role: "user" | "assistant"; content: string } =>
+        (item.role === "user" || item.role === "assistant") &&
+        typeof item.content === "string" &&
+        item.content.trim().length > 0 &&
+        item.content.length <= 4000
+    )
+    .map((item) => ({ role: item.role, content: item.content.trim() }));
+}
 
 export async function POST(request: NextRequest) {
   try {
     const auth = await requireApiUser("chat");
     if (!auth.ok) return auth.response;
 
-    const body = await request.json();
-    const { message, context, history } = body as {
-      message: string;
+    const body = await parseJsonBody<{
+      message?: string;
       context?: { page?: string };
       history?: { role: string; content: string }[];
-    };
+    }>(request);
+
+    if (isErrorResponse(body)) return body;
+
+    const { message, context, history } = body;
 
     if (!message?.trim()) {
       return NextResponse.json({ success: false, error: "Message required" }, { status: 400 });
@@ -35,10 +54,7 @@ export async function POST(request: NextRequest) {
 
     const messages: Groq.Chat.ChatCompletionMessageParam[] = [
       { role: "system", content: system },
-      ...(history ?? []).slice(-6).map((h) => ({
-        role: h.role as "user" | "assistant",
-        content: h.content,
-      })),
+      ...sanitizeHistory(history),
       { role: "user", content: message.trim() },
     ];
 

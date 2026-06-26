@@ -1,12 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth/api-auth";
+import { isErrorResponse, parseJsonBody } from "@/lib/api-json";
 import { logActivity } from "@/lib/activity";
 
 export async function POST(request: NextRequest) {
   const auth = await requireApiUser();
   if (!auth.ok) return auth.response;
 
-  const body = await request.json();
+  const body = await parseJsonBody<{
+    resourceType?: string;
+    resourceId?: string;
+    resourceData?: Record<string, unknown>;
+    title?: string;
+    expiryDays?: number;
+  }>(request);
+
+  if (isErrorResponse(body)) return body;
+
   const { resourceType, resourceId, resourceData, title, expiryDays } = body;
 
   if (!resourceType || !resourceData) {

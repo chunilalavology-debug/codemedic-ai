@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Suspense, useState, useTransition } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Eye, EyeOff, Mail, Lock, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -10,13 +10,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { createClient } from "@/lib/supabase/client";
+import { getSafeRedirectPath } from "@/lib/auth/safe-redirect";
 
-export function LoginForm() {
+function LoginFormInner() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,7 +39,7 @@ export function LoginForm() {
           }
           return;
         }
-        router.push("/overview");
+        router.push(getSafeRedirectPath(searchParams.get("next")));
         router.refresh();
       } catch {
         toast.error("Something went wrong. Please try again.");
@@ -126,5 +128,21 @@ export function LoginForm() {
         </Link>
       </CardFooter>
     </Card>
+  );
+}
+
+export function LoginForm() {
+  return (
+    <Suspense
+      fallback={
+        <Card className="w-full max-w-md border-border/50 shadow-2xl">
+          <CardContent className="flex justify-center py-16">
+            <Loader2 className="size-6 animate-spin text-muted-foreground" />
+          </CardContent>
+        </Card>
+      }
+    >
+      <LoginFormInner />
+    </Suspense>
   );
 }

@@ -9,7 +9,8 @@ export type ActivityAction =
   | "cicd.checked"
   | "share.created"
   | "workspace.created"
-  | "member.invited";
+  | "member.invited"
+  | "member.joined";
 
 export interface ActivityEventInput {
   action: ActivityAction;

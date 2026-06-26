@@ -27,6 +27,13 @@ test.describe("Auth redirect", () => {
     await page.goto("/overview");
     await expect(page).toHaveURL(/\/login/);
   });
+
+  test("new platform routes redirect to login", async ({ page }) => {
+    for (const path of ["/activity", "/workspace", "/cicd"]) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/login/);
+    }
+  });
 });
 
 test.describe("Invite page", () => {
@@ -34,5 +41,19 @@ test.describe("Invite page", () => {
     await page.goto("/invite/invalid-token-12345");
     await expect(page.getByText(/Workspace invitation/i)).toBeVisible();
     await expect(page.getByText(/not found|Invalid/i)).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+test.describe("Share page", () => {
+  test("invalid share token returns 404", async ({ page }) => {
+    const res = await page.goto("/share/invalid-share-token-12345");
+    expect(res?.status()).toBe(404);
+  });
+});
+
+test.describe("Login redirect", () => {
+  test("login page accepts next query param", async ({ page }) => {
+    await page.goto("/login?next=/invite/test-token");
+    await expect(page.getByText("Welcome back")).toBeVisible();
   });
 });

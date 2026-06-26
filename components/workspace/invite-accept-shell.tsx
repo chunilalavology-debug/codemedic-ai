@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, Users, CheckCircle2, XCircle } from "lucide-react";
 import { toast } from "sonner";
+import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -22,6 +23,14 @@ export function InviteAcceptShell({ token }: InviteAcceptShellProps) {
     role: string;
     workspaceName: string;
   } | null>(null);
+
+  const [signedIn, setSignedIn] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    createClient()
+      .auth.getUser()
+      .then(({ data }) => setSignedIn(Boolean(data.user)));
+  }, []);
 
   useEffect(() => {
     fetch(`/api/workspaces/invite?token=${encodeURIComponent(token)}`)
@@ -46,6 +55,10 @@ export function InviteAcceptShell({ token }: InviteAcceptShellProps) {
         body: JSON.stringify({ token }),
       });
       const json = await res.json();
+      if (res.status === 401) {
+        router.push(`/login?next=/invite/${token}`);
+        return;
+      }
       if (!json.success) throw new Error(json.error);
       toast.success("Welcome to the workspace!");
       router.push("/overview");
@@ -90,7 +103,11 @@ export function InviteAcceptShell({ token }: InviteAcceptShellProps) {
               <p className="text-xs text-muted-foreground">
                 Invitation sent to: {info.email}
               </p>
-              <Button onClick={accept} disabled={accepting} className="w-full gap-2">
+              <Button
+                onClick={accept}
+                disabled={accepting || signedIn === false}
+                className="w-full gap-2"
+              >
                 {accepting ? (
                   <Loader2 className="size-4 animate-spin" />
                 ) : (

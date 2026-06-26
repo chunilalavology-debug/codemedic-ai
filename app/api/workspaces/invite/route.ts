@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isErrorResponse, parseJsonBody } from "@/lib/api-json";
 import { logActivity } from "@/lib/activity";
 
 export async function GET(request: NextRequest) {
@@ -8,8 +10,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Token required" }, { status: 400 });
   }
 
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const admin = createAdminClient();
+  if (!admin) {
+    return NextResponse.json({ success: false, error: "Service unavailable" }, { status: 503 });
+  }
+
+  const { data, error } = await admin
     .from("workspace_invitations")
     .select("id, email, role, expires_at, accepted_at, workspaces(id, name, slug)")
     .eq("token", token)
@@ -54,12 +60,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Sign in to accept" }, { status: 401 });
   }
 
-  const { token } = await request.json();
+  const body = await parseJsonBody<{ token?: string }>(request);
+  if (isErrorResponse(body)) return body;
+
+  const { token } = body;
   if (!token) {
     return NextResponse.json({ success: false, error: "Token required" }, { status: 400 });
   }
 
-  const { data: invite, error: inviteError } = await supabase
+  const admin = createAdminClient();
+  if (!admin) {
+    return NextResponse.json({ success: false, error: "Service unavailable" }, { status: 503 });
+  }
+
+  const { data: invite, error: inviteError } = await admin
     .from("workspace_invitations")
     .select("*")
     .eq("token", token)
@@ -100,10 +114,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: memberError.message }, { status: 500 });
   }
 
-  await supabase
+  const { error: acceptError } = await supabase
     .from("workspace_invitations")
     .update({ accepted_at: new Date().toISOString() })
     .eq("id", invite.id);
+
+  if (acceptError) {
+    return NextResponse.json({ success: false, error: acceptError.message }, { status: 500 });
+  }
 
   await supabase.from("user_preferences").upsert({
     user_id: user.id,
@@ -112,7 +130,7 @@ export async function POST(request: NextRequest) {
   });
 
   await logActivity(supabase, user.id, {
-    action: "member.invited",
+    action: "member.joined",
     entityType: "workspace",
     entityId: invite.workspace_id,
     title: "Joined workspace via invitation",

@@ -197,9 +197,7 @@ create policy "Users manage own share links"
   with check (auth.uid() = user_id);
 
 -- Public read for share links by token (anon via service or public policy)
-create policy "Anyone can read valid share links"
-  on public.share_links for select
-  using (expires_at is null or expires_at > now());
+-- Token-scoped reads use service role in app; see schema-v2-security.sql
 
 -- Integrations
 create policy "Users manage own integrations"
@@ -208,13 +206,4 @@ create policy "Users manage own integrations"
   with check (auth.uid() = user_id);
 
 -- Invite: users may join a workspace as themselves (accept flow)
-drop policy if exists "Users can join workspace on invite" on public.workspace_members;
-create policy "Users can join workspace on invite"
-  on public.workspace_members for insert
-  with check (auth.uid() = user_id);
-
--- Invite: allow reading pending invitation by token (public accept page)
-drop policy if exists "Public can read pending invitations" on public.workspace_invitations;
-create policy "Public can read pending invitations"
-  on public.workspace_invitations for select
-  using (accepted_at is null and (expires_at is null or expires_at > now()));
+-- See schema-v2-security.sql for secure invite accept policies

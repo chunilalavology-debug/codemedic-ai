@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
+import { HomeAiChat } from "@/components/landing/home-ai-chat";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -159,6 +160,7 @@ export default function LandingPage() {
             <Logo size="md" />
             <div className="hidden sm:flex items-center gap-6 text-sm font-medium text-muted-foreground">
               <Link href="#features" className="hover:text-foreground transition-colors">Features</Link>
+              <Link href="#ai-assistant" className="hover:text-foreground transition-colors">AI Chat</Link>
               <Link href="#how-it-works" className="hover:text-foreground transition-colors">How it works</Link>
               <Link href="#faq" className="hover:text-foreground transition-colors">FAQ</Link>
             </div>
@@ -278,6 +280,9 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ── AI Chatbot ───────────────────────────────────────────────────── */}
+      <HomeAiChat />
 
       {/* ── Features ─────────────────────────────────────────────────────── */}
       <section id="features" className="px-4 py-14 sm:px-6 lg:px-8 scroll-mt-16">

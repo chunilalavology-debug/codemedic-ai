@@ -48,8 +48,16 @@ export async function upsertUserPreferences(
   patch: Partial<UserPreferences>
 ): Promise<{ ok: boolean; message?: string }> {
   try {
+    const definedPatch = Object.fromEntries(
+      Object.entries(patch).filter(([, value]) => value !== undefined)
+    ) as Partial<UserPreferences>;
+
+    if (Object.keys(definedPatch).length === 0) {
+      return { ok: true };
+    }
+
     const current = await getUserPreferences(supabase, userId);
-    const merged = { ...current, ...patch };
+    const merged = { ...current, ...definedPatch };
 
     const { error } = await supabase.from("user_preferences").upsert({
       user_id: userId,

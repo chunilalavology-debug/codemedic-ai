@@ -27,7 +27,7 @@ export default async function OverviewPage() {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Header title="Overview" user={user} />
-      <main className="flex-1 overflow-y-auto p-6">
+      <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-muted/20 via-background to-background">
         <OverviewShell
           user={user}
           totalAnalyses={totalAnalyses ?? 0}

@@ -18,6 +18,7 @@ import {
   ChevronUp,
   Copy,
   Check,
+  GitMerge,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,12 @@ import { cn } from "@/lib/utils";
 import type { ScanResult, ScanIssue, Severity } from "@/types";
 
 type ScanMode = "website" | "github" | "gitlab";
+
+const SCAN_MODES: { id: ScanMode; label: string; icon: typeof Globe }[] = [
+  { id: "website", label: "Website URL", icon: Globe },
+  { id: "github", label: "GitHub Repo", icon: GitBranch },
+  { id: "gitlab", label: "GitLab Repo", icon: GitMerge },
+];
 
 const severityOrder: Record<Severity, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 };
 
@@ -118,7 +125,7 @@ export function ScanShell() {
       <div>
         <h2 className="text-xl font-bold">Website & Repository Scanner</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Detect SEO issues, security vulnerabilities, and code quality problems in any site or GitHub repo.
+          Detect SEO issues, security vulnerabilities, and code quality problems in any site, GitHub, or GitLab repo.
         </p>
       </div>
 
@@ -126,20 +133,24 @@ export function ScanShell() {
       <Card>
         <CardContent className="p-4 space-y-4">
           {/* Mode tabs */}
-          <div className="flex gap-2">
-            {(["website", "github", "gitlab"] as const).map((m) => (
+          <div className="flex flex-wrap gap-2">
+            {SCAN_MODES.map(({ id, label, icon: Icon }) => (
               <button
-                key={m}
-                onClick={() => { setMode(m); setUrl(""); }}
+                key={id}
+                type="button"
+                onClick={() => {
+                  setMode(id);
+                  setUrl("");
+                }}
                 className={cn(
                   "flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-                  mode === m
+                  mode === id
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-accent"
                 )}
               >
-                {m === "website" ? <Globe className="size-4" /> : <GitBranch className="size-4" />}
-                {m === "website" ? "Website URL" : "GitHub Repo"}
+                <Icon className="size-4" />
+                {label}
               </button>
             ))}
           </div>
@@ -149,8 +160,10 @@ export function ScanShell() {
             <div className="relative flex-1">
               {mode === "website" ? (
                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-              ) : (
+              ) : mode === "github" ? (
                 <GitBranch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+              ) : (
+                <GitMerge className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               )}
               <Input
                 value={url}
@@ -159,7 +172,9 @@ export function ScanShell() {
                 placeholder={
                   mode === "website"
                     ? "https://example.com"
-                    : "https://github.com/owner/repo"
+                    : mode === "github"
+                      ? "https://github.com/owner/repo"
+                      : "https://gitlab.com/owner/repo"
                 }
                 className="pl-9"
               />

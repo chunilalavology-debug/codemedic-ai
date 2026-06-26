@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth/api-auth";
+import { isErrorResponse, parseJsonBody } from "@/lib/api-json";
 
 export async function GET() {
   const auth = await requireApiUser();
@@ -21,7 +22,12 @@ export async function POST(request: NextRequest) {
   const auth = await requireApiUser();
   if (!auth.ok) return auth.response;
 
-  const { provider, accessToken, accountLogin } = await request.json();
+  const body = await parseJsonBody<{ provider?: string; accessToken?: string; accountLogin?: string }>(
+    request
+  );
+  if (isErrorResponse(body)) return body;
+
+  const { provider, accessToken, accountLogin } = body;
 
   if (!provider || !accessToken) {
     return NextResponse.json({ success: false, error: "Provider and token required" }, { status: 400 });
@@ -63,11 +69,15 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ success: false, error: "Provider required" }, { status: 400 });
   }
 
-  await auth.supabase
+  const { error } = await auth.supabase
     .from("integration_tokens")
     .delete()
     .eq("user_id", auth.user.id)
     .eq("provider", provider);
+
+  if (error) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
 
   return NextResponse.json({ success: true });
 }
