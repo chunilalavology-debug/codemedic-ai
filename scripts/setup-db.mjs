@@ -240,6 +240,7 @@ async function main() {
     if (client) {
       console.log("\nApplying security policies...\n");
       await applySchema(client, "supabase/schema-v2-security.sql");
+      await applySchema(client, "supabase/schema-v2-rls-fix.sql");
     }
     console.log("\nDone. Nothing to create.");
     if (client) await client.end();
@@ -269,6 +270,7 @@ async function main() {
     if (needsV1) await applySchema(client, "supabase/schema.sql");
     if (needsV2) await applySchema(client, "supabase/schema-v2.sql");
     await applySchema(client, "supabase/schema-v2-security.sql");
+    await applySchema(client, "supabase/schema-v2-rls-fix.sql");
 
     const after = await checkTablesViaDb(client);
     console.log("\nAfter setup:");

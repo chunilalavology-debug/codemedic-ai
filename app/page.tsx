@@ -20,6 +20,7 @@ import { Logo } from "@/components/shared/logo";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
 import { cn } from "@/lib/utils";
 import { HomeAiChat } from "@/components/landing/home-ai-chat";
+import { HomeFaqWidget } from "@/components/landing/home-faq-widget";
 
 // ─── Data ──────────────────────────────────────────────────────────────────────
 
@@ -592,6 +593,8 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <HomeFaqWidget />
     </div>
   );
 }
