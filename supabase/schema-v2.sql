@@ -1,3 +1,5 @@
+create extension if not exists "pgcrypto";
+
 -- CodeMedic AI v2 — run after schema.sql in Supabase SQL Editor
 
 -- Workspaces

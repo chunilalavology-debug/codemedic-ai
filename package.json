@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "setup:avatars": "node scripts/setup-avatars.mjs",
+    "setup:db": "node scripts/setup-db.mjs",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui"
   },
